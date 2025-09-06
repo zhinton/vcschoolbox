@@ -19,6 +19,7 @@
         return hasExternalEmails;
     };
 
+    
     // Function to show the secondary modal dialog
     const showSecondaryModal = (message) => {
         showModal(message, [
