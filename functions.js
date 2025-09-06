@@ -1,4 +1,7 @@
 const forcedConfidential_type = "Student Protection";
+const hoverEffect_imageID = "10690";
+const hoverEffect_imageHeight = "1080";
+const hoverEffect_imageWidth = "1080";
 
 // ---- scripts/submitNotification.js ----
 // submitNotification.js
@@ -71,6 +74,31 @@ document.getElementById('typeId').addEventListener('change', updatePageForConfid
 
 // Initial call to set the page based on the initial typeId selection
 updatePageForConfidentialType();
+
+
+// ---- scripts/hoverEffect.js ----
+const dropdownMenu = document.getElementById('severityId');
+const hoverImage = document.createElement('img');
+hoverImage.id = 'hoverImage';
+hoverImage.src = `https://${schoolboxDomain}/send.php?id=${imageID}/height/${imageHeight}/width/${imageWidth}`;
+hoverImage.alt = 'Hover Image';
+hoverImage.style.display = 'none';
+hoverImage.style.position = 'absolute';
+hoverImage.style.height = '35REM';
+hoverImage.style.zIndex = '1000';
+document.body.appendChild(hoverImage);
+
+dropdownMenu.addEventListener('mouseover', () => {
+    const rect = dropdownMenu.getBoundingClientRect();
+    hoverImage.style.top = `${rect.top + window.scrollY}px`;
+    hoverImage.style.left = `${rect.right + window.scrollX}px`;
+    hoverImage.style.transform = 'translateY(-50%)';
+    hoverImage.style.display = 'block';
+});
+
+dropdownMenu.addEventListener('mouseout', () => {
+    hoverImage.style.display = 'none';
+});
 
 
 // ---- scripts/modal.js ----
