@@ -1,7 +1,6 @@
 // Generated loader.js
 
-const schoolboxDomain = '';
-const javascriptURLBase = '';
+const schoolboxDomain = 'dev-vici.victorycollege.com';
 window.acceptColor = '';
 window.rejectColor = '';
 
@@ -56,7 +55,8 @@ function updatePageForConfidentialType() {
     const selectedType = selectedOption ? selectedOption.text : '';
     console.log('Selected type:', selectedType);
 
-    if (selectedType.startsWith(confidentialTypes)) {
+    // Use the generated variable here:
+    if (selectedType.startsWith(forcedConfidential_type)) {
         console.log('Confidential type detected.');
 
         // Hide the General tab link
