@@ -80,7 +80,7 @@ updatePageForConfidentialType();
 const dropdownMenu = document.getElementById('severityId');
 const hoverImage = document.createElement('img');
 hoverImage.id = 'hoverImage';
-hoverImage.src = `https://${schoolboxDomain}/send.php?id=${hoverEffect_imageID}/height/${hoverEffect_imageHeight}/width/${hoverEffect_imageWidth}`;
+hoverImage.src = `https://${schoolboxDomain}/send.php?id=${hoverEffect_imageID}&height=${hoverEffect_imageHeight}&width=${hoverEffect_imageWidth}`;
 hoverImage.alt = 'Hover Image';
 hoverImage.style.display = 'none';
 hoverImage.style.position = 'absolute';
