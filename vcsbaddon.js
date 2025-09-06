@@ -1,18 +1,5 @@
-// Generated loader.js
-
-const schoolboxDomain = '';
-const javascriptURLBase = '';
-window.acceptColor = '';
-window.rejectColor = '';
-
-const modules = {
-  "PastoralCare": true,
-  "Emailing": false,
-  "News": false
-};
-
-
 const forcedConfidential_type = "Student Protection";
+
 // ---- scripts/submitNotification.js ----
 // submitNotification.js
 document.querySelector('.submit').addEventListener('click', (event) => {
