@@ -1,6 +1,7 @@
 // Generated loader.js
 
-const schoolboxDomain = 'dev-vici.victorycollege.com';
+const schoolboxDomain = '';
+const javascriptURLBase = '';
 window.acceptColor = '';
 window.rejectColor = '';
 
