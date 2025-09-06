@@ -64,7 +64,7 @@ document.querySelector('.submit').addEventListener('mouseover', (event) => {
         event.preventDefault(); // Prevent form submission
         showModal(`<ul>${missingTagsMessages.join('')}</ul>`, [{
             text: 'OK',
-            color: '#4CAF50',
+            color: window.acceptColor,
             callback: () => {
                 const inputElement = selectizeInput.querySelector('input');
                 if (inputElement) {

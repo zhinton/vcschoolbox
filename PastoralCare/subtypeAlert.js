@@ -10,8 +10,8 @@ subtypeDropdown.addEventListener("change", function() {
     var selectedText = subtypeDropdown.options[subtypeDropdown.selectedIndex].text;
     if (selectedText.toUpperCase().includes(subtypeCheck)) {
         showModal(modalMessage, [
-            { text: 'Yes', color: '#4CAF50' },
-            { text: 'No', color: '#f44336', callback: unselectDropdown }
+            { text: 'Yes', color: window.acceptColor, },
+            { text: 'No', color: window.rejectColor, callback: unselectDropdown }
         ]);
     }
 });

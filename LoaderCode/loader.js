@@ -26,11 +26,9 @@ const scripts = {
         'parentNews.js'
     ]
 };
-
-// Common scripts needed across multiple modules
-const commonScripts = [
-    'modal.js'
-];
+// Define button colors with fallback to tabBarColor
+const acceptColor = 'green' || tabBarColor;
+const rejectColor = 'red' || tabBarColor;
 
 //No changes below this line unless you know what you need changed.
 //----------------------------------------------------------------------------------------------------------------------------------
@@ -88,6 +86,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+
+// Get tab bar color from computed styles
+const tabBarElement = document.querySelector('.tab-bar');
+const tabBarColor = tabBarElement ? getComputedStyle(tabBarElement).backgroundColor : null;
+
+// If acceptColor or rejectColor is blank or falsy, use tabBarColor
+window.acceptColor = acceptColor && acceptColor.trim() ? acceptColor : tabBarColor;
+window.rejectColor = rejectColor && rejectColor.trim() ? rejectColor : tabBarColor;
+
 // This is the notification popup code used by other scripts
 // Function to create and show a modal dialog with customizable buttons
 function showModal(message, buttons) {
@@ -161,3 +169,10 @@ function closeModal() {
         document.body.removeChild(modal);
     }
 }
+
+// ...existing code...
+
+window.acceptColor = acceptColor;
+window.rejectColor = rejectColor;
+
+// ...existing code...

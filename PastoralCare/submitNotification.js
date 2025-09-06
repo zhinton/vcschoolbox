@@ -19,7 +19,7 @@ document.querySelector('.submit').addEventListener('click', (event) => {
         event.preventDefault(); // Prevent form submission
         showModal("Please select a sub-type", [{
             text: 'OK',
-            color: '#4CAF50',
+            color: window.acceptColor,
             callback: () => {
                 dropdown.focus();
             }
