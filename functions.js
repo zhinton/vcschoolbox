@@ -1,34 +1,24 @@
-document.addEventListener('DOMContentLoaded', function() {
-
 const forcedConfidential_type = "Student Protection";
 
 // ---- scripts/submitNotification.js ----
-// submitNotification.js
-document.querySelector('.submit').addEventListener('click', (event) => {
+document.querySelector('.submit')?.addEventListener('click', (event) => {
     const dropdown = document.getElementById('subtypeId');
-    if (!dropdown) {
-        return;
-    }
+    if (!dropdown) return;
 
     const selectedOption = dropdown.options[dropdown.selectedIndex];
-    if (!selectedOption) {
-        return;
-    }
+    if (!selectedOption) return;
 
-    if (selectedOption.textContent.includes("Not Selected")) { // Check the text content
-        event.preventDefault(); // Prevent form submission
+    if (selectedOption.textContent.includes("Not Selected")) {
+        event.preventDefault();
         showModal("Please select a sub-type", [{
             text: 'OK',
             color: window.acceptColor,
-            callback: () => {
-                dropdown.focus();
-            }
+            callback: () => { dropdown.focus(); }
         }]);
     } else {
         console.log('Condition not met: No action taken');
     }
 });
-
 
 // ---- scripts/forcedConfidential.js ----
 function updatePageForConfidentialType() {
@@ -45,32 +35,19 @@ function updatePageForConfidentialType() {
     const selectedType = selectedOption ? selectedOption.text : '';
     console.log('Selected type:', selectedType);
 
-    // Use the generated variable here:
     if (selectedType.startsWith(forcedConfidential_type)) {
         console.log('Confidential type detected.');
-
-        // Hide the General tab link
         generalTabLink.style.display = 'none';
-
-        // Select the Confidential tab
         confidentialTabLink.setAttribute('aria-selected', 'true');
         confidentialTabLink.setAttribute('tabindex', '0');
-        confidentialTabLink.click(); // Simulate a click to activate the tab
+        confidentialTabLink.click();
     } else {
         console.log('Non-confidential type detected.');
-
-        // Show the General tab link
         generalTabLink.style.display = '';
-
-        // Deselect the Confidential tab
         confidentialTabLink.removeAttribute('aria-selected');
         confidentialTabLink.setAttribute('tabindex', '-1');
     }
 }
 
-// Add event listener to typeId field to trigger update on change
-document.getElementById('typeId').addEventListener('change', updatePageForConfidentialType);
-
-// Initial call to set the page based on the initial typeId selection
+document.getElementById('typeId')?.addEventListener('change', updatePageForConfidentialType);
 updatePageForConfidentialType();
-});
