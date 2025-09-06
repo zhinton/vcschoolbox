@@ -1,4 +1,3 @@
-<script>
 console.log("Before loading functions.js");
 
 function showModal(message, buttons) {
@@ -25,4 +24,4 @@ function loadScript(url) {
 loadScript("https://raw.githubusercontent.com/zhinton/vcschoolbox/main/functions.js");
 
 console.log("After calling loadScript for functions.js");
-</script>
+
