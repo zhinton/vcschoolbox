@@ -1,4 +1,5 @@
-<script>
+document.addEventListener('DOMContentLoaded', function() {
+
 const forcedConfidential_type = "Student Protection";
 
 // ---- scripts/submitNotification.js ----
@@ -72,4 +73,4 @@ document.getElementById('typeId').addEventListener('change', updatePageForConfid
 
 // Initial call to set the page based on the initial typeId selection
 updatePageForConfidentialType();
-</script>
+});
