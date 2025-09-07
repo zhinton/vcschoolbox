@@ -1,68 +1,3 @@
-// Define Global Variables
-const schoolboxDomain = 'vici.victorycollege.com'; // Enter your Schoolbox domain here
-const javascriptURLBase = 'https://creativedimensions.com.au/js/'; // JavaScripts location
-
-// Define module flags. Set each module to true
-const modules = {
-    PastoralCare: true,
-    Emailing: true,
-    News: true//
-    };
-// Function to load a script from a URL if not already loaded
-const loadScript = (url) => {
-    if (!document.querySelector(`script[src="${url}"]`)) {
-        const script = document.createElement('script');
-        script.src = url;
-        script.onload = () => console.log(`${url} loaded successfully.`);
-        script.onerror = () => console.error(`Failed to load ${url}.`);
-        document.head.appendChild(script);
-    }
-};
-
-// Function to check if the current URL matches the pattern
-function isMatchingURL(url, targetURLPart) {
-    return url.includes(targetURLPart);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Load common scripts
-    commonScripts.forEach(file => {
-        loadScript(`${javascriptURLBase}${file}`);
-    });
-
-    // Pastoral Care Module Scripts
-    if (modules.PastoralCare) {
-        const pcURLPart = '/pastoral/student/';
-        const endingPart = '/record/insert';
-        if (isMatchingURL(window.location.href, pcURLPart) && window.location.href.endsWith(endingPart)) {
-            scripts.PastoralCareFiles.forEach(file => {
-                loadScript(`${javascriptURLBase}${file}`);
-            });
-        }
-    }
-
-    // Emailing Module Scripts
-    if (modules.Emailing) {
-        const emailURLPart = '/mail/create';
-        if (isMatchingURL(window.location.href, emailURLPart)) {
-            scripts.EmailingFiles.forEach(file => {
-                loadScript(`${javascriptURLBase}${file}`);
-            });
-        }
-    }
-
-    // News Module Scripts
-    if (modules.News) {
-        const newsURLPart = '/news/';
-        if (isMatchingURL(window.location.href, newsURLPart)) {
-            scripts.NewsFiles.forEach(file => {
-                loadScript(`${javascriptURLBase}${file}`);
-            });
-        }
-    }
-});
-
-
 // Get tab bar color from computed styles
 const tabBarElement = document.querySelector('.tab-bar');
 const tabBarColor = tabBarElement ? getComputedStyle(tabBarElement).backgroundColor : null;
@@ -145,9 +80,5 @@ function closeModal() {
     }
 }
 
-// ...existing code...
-
 window.acceptColor = acceptColor;
 window.rejectColor = rejectColor;
-
-// ...existing code...

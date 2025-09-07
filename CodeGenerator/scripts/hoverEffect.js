@@ -1,12 +1,7 @@
-const schoolboxDomain = 'vici.victorycollege.com'; // Replace with your Schoolbox domain
-const imageID = '15037'; // Replace with your desired image ID
-const imageHeight = 1080;   // Replace with your desired image height
-const imageWidth = 1080;    // Replace with your desired image width
-
 const dropdownMenu = document.getElementById('severityId');
 const hoverImage = document.createElement('img');
 hoverImage.id = 'hoverImage';
-hoverImage.src = 'https://vici.victorycollege.com/send.php?id=15037&height=1080&width=1080';
+hoverImage.src = `https://${schoolboxDomain}/send.php?id=${hoverEffect_imageID}&height=${hoverEffect_imageHeight}&width=${hoverEffect_imageWidth}`;
 hoverImage.alt = 'Hover Image';
 hoverImage.style.display = 'none';
 hoverImage.style.position = 'absolute';

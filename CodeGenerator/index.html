@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Schoolbox Addon Generator</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .function-section { display: none; margin-left: 20px; }
+    .function-entry { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Schoolbox Addon Generator</h1>
+  <form id="configForm">
+    <label>Schoolbox Domain: <input type="text" id="schoolboxDomain" required /></label>
+    <label>
+      JavaScript URL: <input type="text" id="JavaScriptURL" required />
+      <br>
+      <small style="color: #555;">
+        Enter the full URL or file path where you will save the functions code (e.g., https://yourdomain.com/js/ or C:\path\to\your\js\folder\).
+      </small>
+    </label>
+
+    <fieldset>
+      <legend>Modules</legend>
+      <label><input type="checkbox" id="PastoralCare" onchange="toggleSection('PastoralCare')"> Pastoral Care</label>
+      <label><input type="checkbox" id="Emailing" onchange="toggleSection('Emailing')"> Emailing</label>
+      <label><input type="checkbox" id="News" onchange="toggleSection('News')"> News</label>
+    </fieldset>
+
+    <fieldset id="PastoralCareSection" class="function-section">
+      <legend>PastoralCare Functions</legend>
+    </fieldset>
+
+    <fieldset id="EmailingSection" class="function-section">
+      <legend>Emailing Functions</legend>
+    </fieldset>
+
+    <fieldset id="NewsSection" class="function-section">
+      <legend>News Functions</legend>
+    </fieldset>
+
+    <p>Enter the HEX values you would like to use for the accepting or rejecting of notifications. If left blank, we will use the navigation bar colours of your instance.</p>
+    <label>Accept Color: <input type="text" id="acceptColor" /></label>
+    <label>Reject Color: <input type="text" id="rejectColor" /></label>
+
+    <button type="button" onclick="generateCode()">Generate Code</button>
+  </form>
+
+  <h2>Generated Schoolbox Scripts</h2>
+  <div style="display: flex; gap: 24px; align-items: flex-start;">
+    <!-- Loader.js box -->
+    <div style="flex: 1;">
+      <h3>loader.js</h3>
+      <textarea id="output" rows="20" cols="80" readonly></textarea>
+      <br>
+      <button onclick="copyCode()">Copy to Clipboard</button>
+      <button onclick="downloadCode()">Download loader.js</button>
+      <br><br>
+      <h4>Restore Loader Settings</h4>
+      <textarea id="restoreInput" rows="6" cols="80" placeholder="Paste your generated loader.js code here"></textarea>
+    </div>
+    <!-- Functions.js box -->
+    <div style="flex: 1;">
+      <h3>functions.js</h3>
+      <textarea id="functionsOutput" rows="20" cols="80" readonly></textarea>
+      <br>
+      <button onclick="copyFunctionsCode()">Copy to Clipboard</button>
+      <button onclick="downloadFunctionsCode()">Download functions.js</button>
+      <br><br>
+      <h4>Restore Functions Settings</h4>
+      <textarea id="restoreFunctionsInput" rows="6" cols="80" placeholder="Paste your generated functions.js code here"></textarea>
+    </div>
+  </div>
+  <button onclick="restoreAllConfig()">Restore All Settings</button>
+
+<script type="module" src="script.js"></script>
+<script>
+  const pcSection = document.getElementById('PastoralCareSection');
+  const emailingSection = document.getElementById('EmailingSection');
+  const newsSection = document.getElementById('NewsSection');
+</script>
+</body>
+</html>
