@@ -109,14 +109,11 @@ const modules = ${JSON.stringify(modules, null, 2)};
   // --- Special handling for subtypeSeverity.js dynamic pairs ---
   let subtypeSeverityCode = '';
   if (selectedPastoralCare.includes('subtypeSeverity')) {
-    // Find the .function-entry containing the subtypeSeverity checkbox
     const entry = document.getElementById('pcFunction-subtypeSeverity')?.closest('.function-entry');
     if (entry) {
-      // Only collect direct child rows that have both inputs (avoid container/add button rows)
       const pairs = [];
       const seen = new Set();
       entry.querySelectorAll('div').forEach(row => {
-        // Only consider rows that have exactly one Subtype and one Category input
         const subtypeInput = row.querySelector('input[placeholder="Subtype"]');
         const categoryInput = row.querySelector('input[placeholder="Category"]');
         if (subtypeInput && categoryInput) {
@@ -135,9 +132,63 @@ const modules = ${JSON.stringify(modules, null, 2)};
     }
   }
 
+  // --- Special handling for subtypeAlert.js dynamic pairs ---
+  let subtypeAlertCode = '';
+  if (selectedPastoralCare.includes('subtypeAlert')) {
+    const entry = document.getElementById('pcFunction-subtypeAlert')?.closest('.function-entry');
+    if (entry) {
+      const pairs = [];
+      const seen = new Set();
+      entry.querySelectorAll('div').forEach(row => {
+        const subtypeInput = row.querySelector('input[placeholder="Subtype"]');
+        const messageInput = row.querySelector('input[placeholder="Message"]');
+        if (subtypeInput && messageInput) {
+          const subtype = subtypeInput.value.trim();
+          const message = messageInput.value.trim();
+          if (subtype && message) {
+            const key = `${subtype}|||${message}`;
+            if (!seen.has(key)) {
+              pairs.push([subtype, message]);
+              seen.add(key);
+            }
+          }
+        }
+      });
+      subtypeAlertCode = `const subtypeAlertPairs = ${JSON.stringify(pairs, null, 4)};\n\n`;
+    }
+  }
+
+  // --- Special handling for actionChecker.js dynamic rows ---
+  let actionCheckerCode = '';
+  if (selectedPastoralCare.includes('actionChecker')) {
+    const entry = document.getElementById('pcFunction-actionChecker')?.closest('.function-entry');
+    if (entry) {
+      const rows = [];
+      const seen = new Set();
+      entry.querySelectorAll('div').forEach(row => {
+        const actionInput = row.querySelector('input[placeholder="Action"]');
+        const tagListInput = row.querySelector('input[placeholder="Tag List (comma separated)"]');
+        const messageInput = row.querySelector('input[placeholder="Message"]');
+        if (actionInput && tagListInput && messageInput) {
+          const action = actionInput.value.trim();
+          const tagList = tagListInput.value.trim();
+          const message = messageInput.value.trim();
+          if (action && tagList && message) {
+            const key = `${action}|||${tagList}|||${message}`;
+            if (!seen.has(key)) {
+              rows.push([action, tagList, message]);
+              seen.add(key);
+            }
+          }
+        }
+      });
+      actionCheckerCode = `const actionCheckerRows = ${JSON.stringify(rows, null, 4)};\n\n`;
+    }
+  }
+
   // Build variable declarations for all options
-  // Place subtypeSeverityCode at the very top of functionsCode
-  let functionsCode = subtypeSeverityCode;
+  // Place special codes at the very top of functionsCode
+  let functionsCode = subtypeSeverityCode + subtypeAlertCode + actionCheckerCode;
   Object.entries(allOptions).forEach(([fn, opts]) => {
     Object.entries(opts).forEach(([key, value]) => {
       // Variable name: functionname_key (e.g. forcedConfidential_type)
