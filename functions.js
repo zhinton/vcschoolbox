@@ -1,5 +1,5 @@
 const forcedConfidential_type = "Student Protection";
-const hoverEffect_imageID = "10690";
+const hoverEffect_imageID = "10691";
 const hoverEffect_imageHeight = "1080";
 const hoverEffect_imageWidth = "1080";
 
@@ -80,7 +80,7 @@ updatePageForConfidentialType();
 const dropdownMenu = document.getElementById('severityId');
 const hoverImage = document.createElement('img');
 hoverImage.id = 'hoverImage';
-hoverImage.src = `https://${schoolboxDomain}/send.php?id=${imageID}/height/${imageHeight}/width/${imageWidth}`;
+hoverImage.src = `https://${schoolboxDomain}/send.php?id=${hoverEffect_imageID}&height=${hoverEffect_imageHeight}&width=${hoverEffect_imageWidth}`;
 hoverImage.alt = 'Hover Image';
 hoverImage.style.display = 'none';
 hoverImage.style.position = 'absolute';
