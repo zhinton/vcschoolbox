@@ -106,8 +106,38 @@ const modules = ${JSON.stringify(modules, null, 2)};
     ...newsOptions
   };
 
+  // --- Special handling for subtypeSeverity.js dynamic pairs ---
+  let subtypeSeverityCode = '';
+  if (selectedPastoralCare.includes('subtypeSeverity')) {
+    // Find the .function-entry containing the subtypeSeverity checkbox
+    const entry = document.getElementById('pcFunction-subtypeSeverity')?.closest('.function-entry');
+    if (entry) {
+      // Only collect direct child rows that have both inputs (avoid container/add button rows)
+      const pairs = [];
+      const seen = new Set();
+      entry.querySelectorAll('div').forEach(row => {
+        // Only consider rows that have exactly one Subtype and one Category input
+        const subtypeInput = row.querySelector('input[placeholder="Subtype"]');
+        const categoryInput = row.querySelector('input[placeholder="Category"]');
+        if (subtypeInput && categoryInput) {
+          const subtype = subtypeInput.value.trim();
+          const category = categoryInput.value.trim();
+          if (subtype && category) {
+            const key = `${subtype}|||${category}`;
+            if (!seen.has(key)) {
+              pairs.push([subtype, category]);
+              seen.add(key);
+            }
+          }
+        }
+      });
+      subtypeSeverityCode = `const subtypeSeverity = ${JSON.stringify(pairs, null, 4)};\n\n`;
+    }
+  }
+
   // Build variable declarations for all options
-  let functionsCode = '';
+  // Place subtypeSeverityCode at the very top of functionsCode
+  let functionsCode = subtypeSeverityCode;
   Object.entries(allOptions).forEach(([fn, opts]) => {
     Object.entries(opts).forEach(([key, value]) => {
       // Variable name: functionname_key (e.g. forcedConfidential_type)
