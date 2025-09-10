@@ -357,40 +357,43 @@ function populateFunctionSections() {
       pairsDiv.style.gap = '8px';
       pairsDiv.style.display = 'none';
 
-      // Function to add a new pair row
-      function addPairRow(subtype = '', category = '') {
+
+      // Generic function to add a row to a container
+      function addDynamicRow(container, fields) {
         const row = document.createElement('div');
         row.style.display = 'flex';
         row.style.gap = '8px';
         row.style.alignItems = 'center';
-
-        const subtypeInput = document.createElement('input');
-        subtypeInput.type = 'text';
-        subtypeInput.placeholder = 'Subtype';
-        subtypeInput.value = subtype;
-        subtypeInput.style.width = '180px';
-
-        const categoryInput = document.createElement('input');
-        categoryInput.type = 'text';
-        categoryInput.placeholder = 'Category';
-        categoryInput.value = category;
-        categoryInput.style.width = '120px';
-
+        fields.forEach(field => {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = field.placeholder;
+          input.value = field.value || '';
+          input.style.width = field.width;
+          row.appendChild(input);
+        });
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.textContent = '–';
-        removeBtn.title = 'Remove this pair';
-        removeBtn.onclick = () => pairsDiv.removeChild(row);
-
-        row.appendChild(subtypeInput);
-        row.appendChild(categoryInput);
+        removeBtn.title = 'Remove this row';
+        removeBtn.onclick = () => container.removeChild(row);
         row.appendChild(removeBtn);
-
-        pairsDiv.appendChild(row);
+        container.appendChild(row);
       }
 
-      // Add initial row
-      addPairRow();
+      // Helper to clear and fill container with data
+      function fillDynamicRows(container, data, fieldDefs) {
+        container.innerHTML = '';
+        if (Array.isArray(data) && data.length > 0) {
+          data.forEach(item => {
+            const fields = fieldDefs.map((def, i) => ({ ...def, value: item[i] }));
+            addDynamicRow(container, fields);
+          });
+        } else {
+          // Add one empty row by default
+          addDynamicRow(container, fieldDefs);
+        }
+      }
 
       // Add button to add more pairs
       const addBtn = document.createElement('button');
@@ -399,7 +402,42 @@ function populateFunctionSections() {
       addBtn.title = 'Add another pair';
       addBtn.style.marginTop = '4px';
       addBtn.style.display = 'none';
-      addBtn.onclick = () => addPairRow();
+
+      // For subtypeSeverity
+      if (item.fileName === "subtypeSeverity.js") {
+        addBtn.onclick = () => addDynamicRow(pairsDiv, [
+          { placeholder: 'Subtype', width: '180px' },
+          { placeholder: 'Category', width: '120px' }
+        ]);
+        fillDynamicRows(pairsDiv, null, [
+          { placeholder: 'Subtype', width: '180px' },
+          { placeholder: 'Category', width: '120px' }
+        ]);
+      }
+      // For subtypeAlert
+      else if (item.fileName === "subtypeAlert.js") {
+        addBtn.onclick = () => addDynamicRow(pairsDiv, [
+          { placeholder: 'Subtype', width: '180px' },
+          { placeholder: 'Message', width: '260px' }
+        ]);
+        fillDynamicRows(pairsDiv, null, [
+          { placeholder: 'Subtype', width: '180px' },
+          { placeholder: 'Message', width: '260px' }
+        ]);
+      }
+      // For actionChecker
+      else if (item.fileName === "actionChecker.js") {
+        addBtn.onclick = () => addDynamicRow(pairsDiv, [
+          { placeholder: 'Action', width: '120px' },
+          { placeholder: 'Tag List (comma separated)', width: '180px' },
+          { placeholder: 'Message', width: '220px' }
+        ]);
+        fillDynamicRows(pairsDiv, null, [
+          { placeholder: 'Action', width: '120px' },
+          { placeholder: 'Tag List (comma separated)', width: '180px' },
+          { placeholder: 'Message', width: '220px' }
+        ]);
+      }
 
       // Container for pairs and addBtn
       const container = document.createElement('div');
@@ -747,38 +785,140 @@ function restoreConfig() {
 window.restoreConfig = restoreConfig;
 
 function restoreFunctionsConfig() {
+
   const code = document.getElementById('restoreFunctionsInput').value;
-
-  // Find all variable assignments like: const function_option = "value";
-  const varRegex = /const\s+([a-zA-Z0-9_]+)_([a-zA-Z0-9_]+)\s*=\s*(['"`])([\s\S]*?)\3;/g;
-  let match;
-  while ((match = varRegex.exec(code)) !== null) {
-    const [_, fn, key, , value] = match;
-    // Try all possible className prefixes
-    const pcInput = document.getElementById(`pcFunction-${fn}-${key}`);
-    const emailInput = document.getElementById(`emailFunction-${fn}-${key}`);
-    const newsInput = document.getElementById(`newsFunction-${fn}-${key}`);
-
-    // Set the value if the input exists
-    if (pcInput) pcInput.value = value;
-    if (emailInput) emailInput.value = value;
-    if (newsInput) newsInput.value = value;
-
-    // Also check the checkbox for this function
-    const pcCheckbox = document.querySelector(`.pcFunction[value="${fn}"]`);
-    const emailCheckbox = document.querySelector(`.emailFunction[value="${fn}"]`);
-    const newsCheckbox = document.querySelector(`.newsFunction[value="${fn}"]`);
-    if (pcCheckbox) pcCheckbox.checked = true;
-    if (emailCheckbox) emailCheckbox.checked = true;
-    if (newsCheckbox) newsCheckbox.checked = true;
+  function parseArrayVar(varName) {
+    const arrMatch = code.match(new RegExp(`const\\s+${varName}\\s*=\\s*(\\[[\\s\\S]*?\\]);`));
+    if (arrMatch) {
+      let arrStr = arrMatch[1]
+        .replace(/(,)(\s*\])/g, '$2') // Remove trailing commas before ]
+        .replace(/\r?\n/g, ' ') // Remove newlines
+        .replace(/\s+/g, ' '); // Collapse whitespace
+      try {
+        return JSON.parse(arrStr);
+      } catch (e) {
+        try {
+          // Try eval as a fallback (safe here because user pastes code)
+          // eslint-disable-next-line no-eval
+          return eval(arrStr);
+        } catch (err) {
+          console.error('Failed to parse array for', varName, arrStr, err);
+        }
+      }
+    }
+    return null;
   }
+  setTimeout(() => {
+    // Restore individual function variable values and checkboxes (like restoreAllConfig)
+    const varRegex = /const\s+([a-zA-Z0-9_]+)_([a-zA-Z0-9_]+)\s*=\s*(["'`])([\s\S]*?)\3;/g;
+    let match;
+    while ((match = varRegex.exec(code)) !== null) {
+      const [_, fn, key, , value] = match;
+      // Try all possible className prefixes
+      const pcInput = document.getElementById(`pcFunction-${fn}-${key}`);
+      const emailInput = document.getElementById(`emailFunction-${fn}-${key}`);
+      const newsInput = document.getElementById(`newsFunction-${fn}-${key}`);
+      if (pcInput) pcInput.value = value;
+      if (emailInput) emailInput.value = value;
+      if (newsInput) newsInput.value = value;
+      // Also check the checkbox for this function and unhide parent section
+      // PastoralCare (pcFunction)
+      const pcCheckbox = document.querySelector(`.pcFunction[value="${fn}"]`);
+      if (pcCheckbox) {
+        pcCheckbox.checked = true;
+        // Check parent module checkbox and trigger change event
+        const parentModule = document.getElementById('PastoralCare');
+        if (parentModule && !parentModule.checked) {
+          parentModule.checked = true;
+          parentModule.dispatchEvent(new Event('change'));
+        }
+        // Unhide parent section
+        const section = pcCheckbox.closest('.function-section');
+        if (section) section.style.display = 'block';
+      }
+      // Emailing (emailFunction)
+      const emailCheckbox = document.querySelector(`.emailFunction[value="${fn}"]`);
+      if (emailCheckbox) {
+        emailCheckbox.checked = true;
+        const parentModule = document.getElementById('Emailing');
+        if (parentModule && !parentModule.checked) {
+          parentModule.checked = true;
+          parentModule.dispatchEvent(new Event('change'));
+        }
+        const section = emailCheckbox.closest('.function-section');
+        if (section) section.style.display = 'block';
+      }
+      // News (newsFunction)
+      const newsCheckbox = document.querySelector(`.newsFunction[value="${fn}"]`);
+      if (newsCheckbox) {
+        newsCheckbox.checked = true;
+        const parentModule = document.getElementById('News');
+        if (parentModule && !parentModule.checked) {
+          parentModule.checked = true;
+          parentModule.dispatchEvent(new Event('change'));
+        }
+        const section = newsCheckbox.closest('.function-section');
+        if (section) section.style.display = 'block';
+      }
+    }
 
-  // Optionally, trigger change events to show/hide options UI
-  ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
-    document.querySelectorAll(`.${className}`).forEach(cb => {
-      cb.dispatchEvent(new Event('change'));
+    // Subtype Severity
+    const subtypeSeverityArr = parseArrayVar('subtypeSeverity');
+    const subtypeSeverityEntry = document.getElementById('pcFunction-subtypeSeverity')?.closest('.function-entry');
+    if (subtypeSeverityEntry) {
+      const pairsDiv = subtypeSeverityEntry.querySelector('div.hover-options-row');
+      if (pairsDiv) {
+        fillDynamicRows(pairsDiv, subtypeSeverityArr, [
+          { placeholder: 'Subtype', width: '180px' },
+          { placeholder: 'Category', width: '120px' }
+        ]);
+      }
+    }
+    // Subtype Alert
+    const subtypeAlertArr = parseArrayVar('subtypeAlertPairs');
+    const subtypeAlertEntry = document.getElementById('pcFunction-subtypeAlert')?.closest('.function-entry');
+    if (subtypeAlertEntry) {
+      const pairsDiv = subtypeAlertEntry.querySelector('div.hover-options-row');
+      if (pairsDiv) {
+        fillDynamicRows(pairsDiv, subtypeAlertArr, [
+          { placeholder: 'Subtype', width: '180px' },
+          { placeholder: 'Message', width: '260px' }
+        ]);
+      }
+    }
+    // Action Checker
+    const actionCheckerArr = parseArrayVar('actionCheckerRows');
+    const actionCheckerEntry = document.getElementById('pcFunction-actionChecker')?.closest('.function-entry');
+    if (actionCheckerEntry) {
+      const rowsDiv = actionCheckerEntry.querySelector('div.hover-options-row');
+      if (rowsDiv) {
+        fillDynamicRows(rowsDiv, actionCheckerArr, [
+          { placeholder: 'Action', width: '120px' },
+          { placeholder: 'Tag List (comma separated)', width: '180px' },
+          { placeholder: 'Message', width: '220px' }
+        ]);
+      }
+    }
+
+    // After restoring variables, also check function checkboxes for included scripts
+    ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
+      document.querySelectorAll(`.${className}`).forEach(cb => {
+        const fn = cb.value;
+        const regex = new RegExp(`// ---- scripts/${fn}\\.js ----`);
+        if (regex.test(code)) {
+          cb.checked = true;
+          cb.dispatchEvent(new Event('change'));
+        }
+      });
     });
-  });
+
+    // Optionally, trigger change events to show/hide options UI
+    ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
+      document.querySelectorAll(`.${className}`).forEach(cb => {
+        cb.dispatchEvent(new Event('change'));
+      });
+    });
+  }, 0);
 }
 window.restoreFunctionsConfig = restoreFunctionsConfig;
 

@@ -18,7 +18,7 @@
       JavaScript URL: <input type="text" id="JavaScriptURL" required />
       <br>
       <small style="color: #555;">
-        Enter the full URL or file path where you will save the functions code (e.g., https://yourdomain.com/js/ or C:\path\to\your\js\folder\).
+        Enter the base URL where you will save the functions.js code (e.g., https://yourdomain.com/js/). This will append the functions.js filename automatically.
       </small>
     </label>
 
@@ -69,8 +69,10 @@
       <button onclick="copyFunctionsCode()">Copy to Clipboard</button>
       <button onclick="downloadFunctionsCode()">Download functions.js</button>
       <br><br>
-      <h4>Restore Functions Settings</h4>
-      <textarea id="restoreFunctionsInput" rows="6" cols="80" placeholder="Paste your generated functions.js code here"></textarea>
+  <h4>Restore Functions Settings</h4>
+  <textarea id="restoreFunctionsInput" rows="6" cols="80" placeholder="Paste your generated functions.js code here"></textarea>
+  <br>
+  <button type="button" onclick="restoreFunctionsConfig()">Restore Functions Settings</button>
     </div>
   </div>
   <button onclick="restoreAllConfig()">Restore All Settings</button>
