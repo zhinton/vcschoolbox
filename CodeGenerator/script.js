@@ -24,11 +24,39 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('button[onclick="generateCode()"]').addEventListener('click', generateCode);
   document.querySelector('button[onclick="copyCode()"]').addEventListener('click', copyCode);
   document.querySelector('button[onclick="downloadCode()"]').addEventListener('click', downloadCode);
+
+  // Tab switching logic
+  const splitTab = document.getElementById('splitTab');
+  const combinedTab = document.getElementById('combinedTab');
+  splitTab.addEventListener('click', () => setOutputMode('split'));
+  combinedTab.addEventListener('click', () => setOutputMode('combined'));
 });
+
+let outputMode = 'split';
+function setOutputMode(mode) {
+  outputMode = mode;
+  const splitTab = document.getElementById('splitTab');
+  const combinedTab = document.getElementById('combinedTab');
+  splitTab.classList.toggle('active', mode === 'split');
+  combinedTab.classList.toggle('active', mode === 'combined');
+  // Show/hide relevant UI sections
+  document.getElementById('splitOutputArea').style.display = mode === 'split' ? '' : 'none';
+  document.getElementById('combinedOutputArea').style.display = mode === 'combined' ? '' : 'none';
+  // JS URL field logic
+  const jsUrlInput = document.getElementById('JavaScriptURL');
+  if (jsUrlInput) {
+    jsUrlInput.disabled = mode === 'combined';
+    if (mode === 'combined') jsUrlInput.value = '';
+  }
+  // Restore All button logic
+  const restoreAllBtn = document.getElementById('restoreAllBtn');
+  if (restoreAllBtn) restoreAllBtn.style.display = mode === 'split' ? '' : 'none';
+  // No code generation on tab switch
+}
 
 async function generateCode() {
   // Collect static fields
-  const schoolboxDomain = document.getElementById('schoolboxDomain').value;
+  const schoolboxDomain = window.location.origin;
   const JavaScriptURL = document.getElementById('JavaScriptURL').value;
   const acceptColor = document.getElementById('acceptColor').value;
   const rejectColor = document.getElementById('rejectColor').value;
@@ -44,7 +72,7 @@ async function generateCode() {
   let loaderCode = `<script>
 // Generated Schoolbox Addons Loader Script
 
-const schoolboxDomain = '${schoolboxDomain}';
+const schoolboxDomain = window.location.origin;
 const JavaScriptURL = '${JavaScriptURL}';
 window.acceptColor = '${acceptColor}';
 window.rejectColor = '${rejectColor}';
@@ -228,6 +256,17 @@ const modules = ${JSON.stringify(modules, null, 2)};
   // Show the generated code in the output textareas
   document.getElementById('output').value = loaderCode;
   document.getElementById('functionsOutput').value = functionsCode;
+  // Also update the combined output area directly so it's current immediately
+  try {
+    const combinedEl = document.getElementById('combinedOutput');
+    if (combinedEl) {
+      const out = loaderCode || '';
+      const fn = functionsCode || '';
+      combinedEl.value = [out.trim(), fn.trim()].filter(Boolean).join('\n\n// ---- SPLIT ----\n\n');
+    }
+  } catch (e) {
+    // ignore any DOM errors
+  }
 }
 
 // Add these functions for the new box:

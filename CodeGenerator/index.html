@@ -10,23 +10,61 @@
     .function-entry { margin-bottom: 10px; }
   </style>
 </head>
-<body>
-  <h1>Schoolbox Addon Generator</h1>
-  <form id="configForm">
-    <label>Schoolbox Domain: <input type="text" id="schoolboxDomain" required /></label>
-    <label>
-      JavaScript URL: <input type="text" id="JavaScriptURL" required />
-      <br>
-      <small style="color: #555;">
-        Enter the base URL where you will save the functions.js code (e.g., https://yourdomain.com/js/). This will append the functions.js filename automatically.
-      </small>
-    </label>
+<body style="background:#f0f0f0; min-height:100vh; min-width:100vw; display:flex; justify-content:center; align-items:center; padding:0;">
+  <div style="width:1080px; margin:0 0 32px 0; background:#fff; padding:0 32px 32px 32px; box-sizing:border-box;">
+  <div style="background:#F8D7DA; color:#721c24; border:1px solid #F5C6CB; padding:14px 28px; margin:0 -32px 0 -32px; font-size:1.08em; text-align:center; font-weight:500;">
+        <strong>Disclaimer:</strong> This tool is <u>not</u> developed or endorsed by Schoolbox. Please test all generated code in a development environment before deploying to production.
+      </div>
+  <div style="background:#0066B0; color:#fff; padding:24px 0; margin:0 -32px 24px -32px; text-align:center;">
+      <h1 style="margin:0; font-size:2.2em; font-weight:700; letter-spacing:1px;">Schoolbox Addon Generator</h1>
+    </div>
+    <form id="configForm">
+    <!-- Schoolbox Domain input removed: now auto-detected in loader.js -->
+    <!-- JavaScript URL moved into Split outputs area -->
 
     <fieldset>
       <legend>Modules</legend>
-      <label><input type="checkbox" id="PastoralCare" onchange="toggleSection('PastoralCare')"> Pastoral Care</label>
-      <label><input type="checkbox" id="Emailing" onchange="toggleSection('Emailing')"> Emailing</label>
-      <label><input type="checkbox" id="News" onchange="toggleSection('News')"> News</label>
+      <div style="display: flex; gap: 40px; margin-top: 16px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <span style="font-size:1.08em; font-weight:500;">Pastoral Care</span>
+          <div style="display: flex; align-items: center; gap: 12px; position: relative;">
+            <label class="switch" style="position: relative;">
+              <input type="checkbox" id="PastoralCare" onchange="toggleSection('PastoralCare'); updateSwitchLabel('PastoralCare')">
+              <span class="slider"></span>
+              <span class="switch-labels">
+                <span class="switch-off">Off</span>
+                <span class="switch-on">On</span>
+              </span>
+            </label>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <span style="font-size:1.08em; font-weight:500;">Emailing</span>
+          <div style="display: flex; align-items: center; gap: 12px; position: relative;">
+            <label class="switch" style="position: relative;">
+              <input type="checkbox" id="Emailing" onchange="toggleSection('Emailing'); updateSwitchLabel('Emailing')">
+              <span class="slider"></span>
+              <span class="switch-labels">
+                <span class="switch-on">On</span>
+                <span class="switch-off">Off</span>
+              </span>
+            </label>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <span style="font-size:1.08em; font-weight:500;">News</span>
+          <div style="display: flex; align-items: center; gap: 12px; position: relative;">
+            <label class="switch" style="position: relative;">
+              <input type="checkbox" id="News" onchange="toggleSection('News'); updateSwitchLabel('News')">
+              <span class="slider"></span>
+              <span class="switch-labels">
+                <span class="switch-on">On</span>
+                <span class="switch-off">Off</span>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
     </fieldset>
 
     <fieldset id="PastoralCareSection" class="function-section">
@@ -41,47 +79,264 @@
       <legend>News Functions</legend>
     </fieldset>
 
-    <p>Enter the HEX values you would like to use for the accepting or rejecting of notifications. If left blank, we will use the navigation bar colours of your instance.</p>
-    <label>Accept Color: <input type="text" id="acceptColor" /></label>
-    <label>Reject Color: <input type="text" id="rejectColor" /></label>
-
-    <button type="button" onclick="generateCode()">Generate Code</button>
+    <fieldset style="margin-top:24px; margin-bottom:18px; border:1px solid #ccc; padding:18px 24px;">
+      <legend style="font-size:1.08em; font-weight:600; padding:0 8px;">Look and Feel</legend>
+      <p style="margin-top:0;">Enter the HEX values you would like to use for the accepting or rejecting of notifications. If left blank, we will use the navigation bar colours of your instance.</p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label for="acceptColor">Accept Color:</label>
+          <input type="text" id="acceptColor" oninput="updateColorPreview()" />
+          <button id="acceptPreviewBtn" type="button" style="margin-left:8px; padding:8px 24px; border:none; border-radius:4px; background:#4CAF50; color:#fff; font-weight:600; cursor:default;">Accept Example</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label for="rejectColor">Reject Color:</label>
+          <input type="text" id="rejectColor" oninput="updateColorPreview()" />
+          <button id="rejectPreviewBtn" type="button" style="margin-left:8px; padding:8px 24px; border:none; border-radius:4px; background:#B00020; color:#fff; font-weight:600; cursor:default;">Reject Example</button>
+        </div>
+      </div>
+    </fieldset>
+    <div style="display:flex; justify-content:center; margin:24px 0;">
+      <button type="button" onclick="generateCode()" class="generate-btn">Generate Code</button>
+    </div>
+    <hr style="border:none; border-top:2px solid #e0e0e0; margin:32px 0 36px 0; width:100%;">
   </form>
 
   <h2>Generated Schoolbox Scripts</h2>
-  <div style="display: flex; gap: 24px; align-items: flex-start;">
-    <!-- Loader.js box -->
-    <div style="flex: 1;">
-      <h3>loader.js</h3>
-      <textarea id="output" rows="20" cols="80" readonly></textarea>
-      <br>
-      <button onclick="copyCode()">Copy to Clipboard</button>
-      <button onclick="downloadCode()">Download loader.js</button>
-      <br><br>
-      <h4>Restore Loader Settings</h4>
-      <textarea id="restoreInput" rows="6" cols="80" placeholder="Paste your generated loader.js code here"></textarea>
-    </div>
-    <!-- Functions.js box -->
-    <div style="flex: 1;">
-      <h3>functions.js</h3>
-      <textarea id="functionsOutput" rows="20" cols="80" readonly></textarea>
-      <br>
-      <button onclick="copyFunctionsCode()">Copy to Clipboard</button>
-      <button onclick="downloadFunctionsCode()">Download functions.js</button>
-      <br><br>
-  <h4>Restore Functions Settings</h4>
-  <textarea id="restoreFunctionsInput" rows="6" cols="80" placeholder="Paste your generated functions.js code here"></textarea>
-  <br>
-  <button type="button" onclick="restoreFunctionsConfig()">Restore Functions Settings</button>
+  <!-- Option to combine into one file or keep split files (switch) -->
+  <div style="margin-bottom: 8px; display:flex; align-items:center; gap:12px;">
+    <div class="tab-container" style="display: flex; width: 100%; margin-bottom: 16px;">
+      <button id="splitTab" class="tab active" style="flex: 1; padding: 12px; font-size: 1.1em; border: none; background: #e0e0e0; cursor: pointer;">Split Output</button>
+      <button id="combinedTab" class="tab" style="flex: 1; padding: 12px; font-size: 1.1em; border: none; background: #f5f5f5; cursor: pointer;">Combined Output</button>
     </div>
   </div>
-  <button onclick="restoreAllConfig()">Restore All Settings</button>
+  <style>
+    .generate-btn {
+      background: #0066B0;
+      color: #fff;
+      font-size: 1.18em;
+      font-weight: 600;
+      padding: 14px 40px;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: background 0.18s, box-shadow 0.18s;
+      letter-spacing: 0.5px;
+    }
+    .generate-btn:hover {
+      background: #005090;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    .generate-btn:active {
+      background: #003d6b;
+    }
+    /* Simple switch styling */
+    .switch { position: relative; display: inline-block; width: 70px; height: 36px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #90A8D3; transition: .2s; border-radius: 0; }
+    .slider:before { position: absolute; content: ""; height: 28px; width: 28px; left: 4px; bottom: 4px; background-color: white; transition: .2s; border-radius: 0; }
+    .switch input:checked + .slider { background-color: #0066B0; }
+    .switch input:checked + .slider:before { transform: translateX(34px); }
+    .switch-labels {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 10;
+      font-size: 1.2em;
+      font-weight: 400;
+      color: #222;
+      padding: 0 8px 0 0;
+      box-sizing: border-box;
+      text-shadow: none;
+    }
+    .switch-on {
+      text-align: left;
+      flex: 1 1 0;
+      transition: opacity 0.2s;
+      padding-left: 5px;
+      color: #fff;
+      font-weight: 400;
+    }
+    .switch-off {
+      text-align: right;
+      flex: 1 1 0;
+      transition: opacity 0.2s;
+      font-weight: 400;
+    }
+    /* Hide inactive label */
+    .switch input:not(:checked) ~ .switch-labels .switch-on {
+      display: none;
+    }
+    .switch input:not(:checked) ~ .switch-labels .switch-off {
+      display: inline;
+    }
+    .switch input:checked ~ .switch-labels .switch-on {
+      display: inline;
+    }
+    .switch input:checked ~ .switch-labels .switch-off {
+      display: none;
+    }
+  </style>
+  <script>
+    function updateSwitchLabel(module) {
+      var checkbox = document.getElementById(module);
+      var label = document.getElementById(module + 'Label');
+      label.textContent = checkbox.checked ? 'On' : 'Off';
+    }
+    // Initialize labels on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      updateSwitchLabel('PastoralCare');
+      updateSwitchLabel('Emailing');
+      updateSwitchLabel('News');
+    });
+  </script>
+
+  <div id="splitOutputArea">
+    <div style="width:100%; margin-bottom:8px;">
+      <div style="display:flex; gap:12px; align-items:center;">
+        <label for="JavaScriptURL" style="min-width:140px;">JavaScript URL:</label>
+        <input type="text" id="JavaScriptURL" style="flex:1;" />
+      </div>
+      <div style="font-size:0.9em; color:#666; margin-top:6px;">This is the base URL where your hosted <code>functions.js</code> will live (for example: <code>https://yourdomain.com/js/</code>). The generator will append <code>functions.js</code> automatically.</div>
+    </div>
+    <div id="outputsColumns" style="display:flex; gap: 24px; align-items: flex-start; width:100%;">
+      <!-- Loader.js box -->
+      <div style="flex: 1;">
+        <h3>loader.js</h3>
+        <textarea id="output" rows="20" cols="80" readonly></textarea>
+        <br>
+        <button onclick="copyCode()">Copy to Clipboard</button>
+        <button onclick="downloadCode()">Download loader.js</button>
+        <br><br>
+        <h4>Restore Loader Settings</h4>
+        <textarea id="restoreInput" rows="6" cols="80" placeholder="Paste your generated loader.js code here"></textarea>
+      </div>
+      <!-- Functions.js box -->
+      <div style="flex: 1;">
+        <h3>functions.js</h3>
+        <textarea id="functionsOutput" rows="20" cols="80" readonly></textarea>
+        <br>
+        <button onclick="copyFunctionsCode()">Copy to Clipboard</button>
+        <button onclick="downloadFunctionsCode()">Download functions.js</button>
+        <br><br>
+        <h4>Restore Functions Settings</h4>
+        <textarea id="restoreFunctionsInput" rows="6" cols="80" placeholder="Paste your generated functions.js code here"></textarea>
+        <br>
+      </div>
+    </div>
+    <!-- Single restore button for split mode (applies to both Loader and Functions) -->
+    <div id="splitRestore" style="display:flex; justify-content:center; margin-top:8px;">
+      <button id="restoreAllBtn" onclick="restoreAllConfig()">Restore All Settings</button>
+    </div>
+  </div>
+  <div id="combinedOutputArea" style="display:none; width:100%; margin-top:8px;">
+    <div style="flex: 1;">
+      <h3>Schoolbox Code (combined)</h3>
+      <textarea id="combinedOutput" rows="24" cols="160" readonly></textarea>
+      <br>
+      <button id="copyCombinedBtn">Copy to Clipboard</button>
+      <br><br>
+      <h4>Restore Combined Settings</h4>
+      <textarea id="restoreCombinedInput" rows="6" cols="160" placeholder="Paste your combined Schoolbox code here"></textarea>
+      <br>
+      <div id="combinedRestore" style="display:flex; justify-content:center; margin-top:8px;">
+        <button id="restoreCombinedBtn" type="button" onclick="restoreCombinedConfig()">Restore Combined Settings</button>
+      </div>
+    </div>
+  </div>
+  
 
 <script type="module" src="script.js"></script>
+<script>
+function updateColorPreview() {
+  const acceptColor = document.getElementById('acceptColor').value.trim();
+  const rejectColor = document.getElementById('rejectColor').value.trim();
+  const acceptBtn = document.getElementById('acceptPreviewBtn');
+  const rejectBtn = document.getElementById('rejectPreviewBtn');
+  // Only update if valid hex (3 or 6 digits, with or without #)
+  const hexRegex = /^#?[0-9A-Fa-f]{6}$|^#?[0-9A-Fa-f]{3}$/;
+  if (acceptBtn) {
+    acceptBtn.style.background = hexRegex.test(acceptColor) ? (acceptColor.startsWith('#') ? acceptColor : '#' + acceptColor) : '#4CAF50';
+  }
+  if (rejectBtn) {
+    rejectBtn.style.background = hexRegex.test(rejectColor) ? (rejectColor.startsWith('#') ? rejectColor : '#' + rejectColor) : '#B00020';
+  }
+}
+document.addEventListener('DOMContentLoaded', updateColorPreview);
+</script>
 <script>
   const pcSection = document.getElementById('PastoralCareSection');
   const emailingSection = document.getElementById('EmailingSection');
   const newsSection = document.getElementById('NewsSection');
+
+  // ...existing code...
+
+  // Build combined content from the two generated textareas
+  function updateCombinedOutput() {
+    const out = document.getElementById('output')?.value || '';
+    const fn = document.getElementById('functionsOutput')?.value || '';
+    const combined = [out.trim(), fn.trim()].filter(Boolean).join('\n\n// ---- SPLIT ----\n\n');
+    document.getElementById('combinedOutput').value = combined;
+  }
+
+  // Wire up copy/download for combined
+  document.addEventListener('DOMContentLoaded', () => {
+    const copyBtn = document.getElementById('copyCombinedBtn');
+    const dlBtn = document.getElementById('downloadCombinedBtn');
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+      updateCombinedOutput();
+      navigator.clipboard.writeText(document.getElementById('combinedOutput').value);
+    });
+    if (dlBtn) dlBtn.addEventListener('click', () => {
+      updateCombinedOutput();
+      const text = document.getElementById('combinedOutput').value;
+      const blob = new Blob([text], { type: 'text/javascript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'schoolbox.combined.js';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+    });
+
+    // Keep combined in sync when underlying outputs change
+    const outTA = document.getElementById('output');
+    const fnTA = document.getElementById('functionsOutput');
+    [outTA, fnTA].forEach(ta => {
+      if (ta) ta.addEventListener('input', () => {
+        if (document.getElementById('outputModeSwitch').checked) updateCombinedOutput();
+      });
+    });
+  });
+
+  // Restore combined content by splitting into loader and functions parts
+  function restoreCombinedConfig() {
+    const combined = document.getElementById('restoreCombinedInput')?.value || document.getElementById('combinedOutput')?.value || '';
+    if (!combined.trim()) return alert('No combined code provided');
+    // Ensure UI is in combined mode
+    const switchEl = document.getElementById('outputModeSwitch');
+    if (switchEl && !switchEl.checked) { switchEl.checked = true; toggleOutputMode(); }
+    // Split using the marker we used when combining
+    const parts = combined.split('\n\n// ---- SPLIT ----\n\n');
+    const loaderPart = parts[0] || '';
+    const functionsPart = parts.slice(1).join('\n\n// ---- SPLIT ----\n\n') || '';
+    // Put into restore textareas and call existing restore functions
+    if (loaderPart) document.getElementById('restoreInput').value = loaderPart;
+    if (functionsPart) document.getElementById('restoreFunctionsInput').value = functionsPart;
+    // Call the restore routines
+    try { restoreAllConfig(); } catch (e) { console.warn('restoreAllConfig failed', e); }
+    try { restoreFunctionsConfig(); } catch (e) { console.warn('restoreFunctionsConfig failed', e); }
+    alert('Restore attempted. Check UI for updated settings.');
+  }
 </script>
 </body>
 </html>
