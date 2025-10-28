@@ -1,5 +1,5 @@
 const forcedConfidential_type = "Student Protection";
-const hoverEffect_imageID = "10691";
+const hoverEffect_imageID = "10690";
 const hoverEffect_imageHeight = "1080";
 const hoverEffect_imageWidth = "1080";
 
