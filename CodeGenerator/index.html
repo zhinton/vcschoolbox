@@ -12,53 +12,53 @@
 </head>
 <body style="background:#f0f0f0; min-height:100vh; min-width:100vw; display:flex; justify-content:center; align-items:center; padding:0;">
   <div style="width:1080px; margin:0 0 32px 0; background:#fff; padding:0 32px 32px 32px; box-sizing:border-box;">
-    <div style="background:#F8D7DA; color:#721c24; border:1px solid #F5C6CB; padding:14px 28px; margin:0 -32px 0 -32px; font-size:1.08em; text-align:center; font-weight:500;">
-      <strong>Disclaimer:</strong> This tool is <u>not</u> developed or endorsed by Schoolbox. Please test all generated code in a development environment before deploying to production.
-    </div>
-    <div style="background:#0066B0; color:#fff; padding:24px 0; margin:0 -32px 24px -32px; text-align:center;">
+  <div style="background:#F8D7DA; color:#721c24; border:1px solid #F5C6CB; padding:14px 28px; margin:0 -32px 0 -32px; font-size:1.08em; text-align:center; font-weight:500;">
+        <strong>Disclaimer:</strong> This tool is <u>not</u> developed or endorsed by Schoolbox. Please test all generated code in a development environment before deploying to production.
+      </div>
+  <div style="background:#0066B0; color:#fff; padding:24px 0; margin:0 -32px 24px -32px; text-align:center;">
       <h1 style="margin:0; font-size:2.2em; font-weight:700; letter-spacing:1px;">Schoolbox Addon Generator</h1>
     </div>
     <form id="configForm">
-      <!-- Schoolbox Domain input removed: now auto-detected in loader.js -->
-      <!-- JavaScript URL moved into Split outputs area -->
+    <!-- Schoolbox Domain input removed: now auto-detected in loader.js -->
+    <!-- JavaScript URL moved into Split outputs area -->
 
-      <fieldset>
-        <legend>Modules</legend>
-        <div style="display: flex; gap: 40px; margin-top: 16px;">
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <span style="font-size:1.08em; font-weight:500;">Pastoral Care</span>
-            <div style="display: flex; align-items: center; gap: 12px; position: relative;">
-              <label class="switch" style="position: relative;">
-                <input type="checkbox" id="PastoralCare" onchange="toggleSection('PastoralCare'); updateSwitchLabel('PastoralCare')">
-                <span class="slider"></span>
-                <span class="switch-labels">
-                  <span class="switch-off">Off</span>
-                  <span class="switch-on">On</span>
-                </span>
-              </label>
-            </div>
+    <fieldset>
+      <legend>Modules</legend>
+      <div style="display: flex; gap: 40px; margin-top: 16px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <span style="font-size:1.08em; font-weight:500;">Pastoral Care</span>
+          <div style="display: flex; align-items: center; gap: 12px; position: relative;">
+            <label class="switch" style="position: relative;">
+              <input type="checkbox" id="PastoralCare" onchange="toggleSection('PastoralCare'); updateSwitchLabel('PastoralCare')">
+              <span class="slider"></span>
+              <span class="switch-labels">
+                <span class="switch-off">Off</span>
+                <span class="switch-on">On</span>
+              </span>
+            </label>
           </div>
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <span style="font-size:1.08em; font-weight:500;">Emailing</span>
-            <div style="display: flex; align-items: center; gap: 12px; position: relative;">
-              <label class="switch" style="position: relative;">
-                <input type="checkbox" id="Emailing" onchange="toggleSection('Emailing'); updateSwitchLabel('Emailing')">
-                <span class="slider"></span>
-                <span class="switch-labels">
-                  <span class="switch-on">On</span>
-                  <span class="switch-off">Off</span>
-                </span>
-              </label>
-            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <span style="font-size:1.08em; font-weight:500;">Emailing</span>
+          <div style="display: flex; align-items: center; gap: 12px; position: relative;">
+            <label class="switch" style="position: relative;">
+              <input type="checkbox" id="Emailing" onchange="toggleSection('Emailing'); updateSwitchLabel('Emailing')">
+              <span class="slider"></span>
+              <span class="switch-labels">
+                <span class="switch-on">On</span>
+                <span class="switch-off">Off</span>
+              </span>
+            </label>
           </div>
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <span style="font-size:1.08em; font-weight:500;">News</span>
-            <div style="display: flex; align-items: center; gap: 12px; position: relative;">
-              <label class="switch" style="position: relative;">
-                <input type="checkbox" id="News" onchange="toggleSection('News'); updateSwitchLabel('News')">
-                <span class="slider"></span>
-                <span class="switch-labels">
-                  <span class="switch-on">On</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <span style="font-size:1.08em; font-weight:500;">News</span>
+          <div style="display: flex; align-items: center; gap: 12px; position: relative;">
+            <label class="switch" style="position: relative;">
+              <input type="checkbox" id="News" onchange="toggleSection('News'); updateSwitchLabel('News')">
+              <span class="slider"></span>
+              <span class="switch-labels">
+                <span class="switch-on">On</span>
                 <span class="switch-off">Off</span>
               </span>
             </label>
@@ -185,25 +185,6 @@
     }
   </style>
   <script>
-    // Tab switching logic for output areas
-    document.addEventListener('DOMContentLoaded', function() {
-      const splitTab = document.getElementById('splitTab');
-      const combinedTab = document.getElementById('combinedTab');
-      const splitArea = document.getElementById('splitOutputArea');
-      const combinedArea = document.getElementById('combinedOutputArea');
-      splitTab.addEventListener('click', function() {
-        splitTab.classList.add('active');
-        combinedTab.classList.remove('active');
-        splitArea.style.display = '';
-        combinedArea.style.display = 'none';
-      });
-      combinedTab.addEventListener('click', function() {
-        combinedTab.classList.add('active');
-        splitTab.classList.remove('active');
-        splitArea.style.display = 'none';
-        combinedArea.style.display = '';
-      });
-    });
     function updateSwitchLabel(module) {
       var checkbox = document.getElementById(module);
       var label = document.getElementById(module + 'Label');
@@ -226,7 +207,7 @@
       <div style="font-size:0.9em; color:#666; margin-top:6px;">This is the base URL where your hosted <code>functions.js</code> will live (for example: <code>https://yourdomain.com/js/</code>). The generator will append <code>functions.js</code> automatically.</div>
     </div>
     <div id="outputsColumns" style="display:flex; gap: 24px; align-items: flex-start; width:100%;">
-      <!-- Loader.js box (removed restore) -->
+      <!-- Loader.js box -->
       <div style="flex: 1;">
         <h3>loader.js</h3>
         <textarea id="output" rows="20" cols="80" readonly></textarea>
@@ -234,7 +215,8 @@
         <button onclick="copyCode()">Copy to Clipboard</button>
         <button onclick="downloadCode()">Download loader.js</button>
         <br><br>
-        <!-- Loader restore box removed -->
+        <h4>Restore Loader Settings</h4>
+        <textarea id="restoreInput" rows="6" cols="80" placeholder="Paste your generated loader.js code here"></textarea>
       </div>
       <!-- Functions.js box -->
       <div style="flex: 1;">
@@ -244,19 +226,14 @@
         <button onclick="copyFunctionsCode()">Copy to Clipboard</button>
         <button onclick="downloadFunctionsCode()">Download functions.js</button>
         <br><br>
+        <h4>Restore Functions Settings</h4>
+        <textarea id="restoreFunctionsInput" rows="6" cols="80" placeholder="Paste your generated functions.js code here"></textarea>
+        <br>
       </div>
     </div>
-    <!-- splitRestore button moved below restoreFunctionsInput -->
-    <!-- Restore Functions Settings moved out of output columns -->
-    <div id="restoreFunctionsArea" style="width:100%; margin-top:24px;">
-      <h4>Restore Settings</h4>
-      <div style="color:#a94442; font-size:0.98em; margin-bottom:8px;">
-        <strong>Note:</strong> Restoring settings may require you to re-import the loader setting into Schoolbox.
-      </div>
-      <textarea id="restoreFunctionsInput" rows="6" style="width:100%; box-sizing:border-box;" placeholder="Paste your generated functions.js code here"></textarea>
-      <div style="display:flex; justify-content:center; margin-top:8px;">
-        <button id="restoreAllBtn" onclick="restoreAllConfig()">Restore All Settings</button>
-      </div>
+    <!-- Single restore button for split mode (applies to both Loader and Functions) -->
+    <div id="splitRestore" style="display:flex; justify-content:center; margin-top:8px;">
+      <button id="restoreAllBtn" onclick="restoreAllConfig()">Restore All Settings</button>
     </div>
   </div>
   <div id="combinedOutputArea" style="display:none; width:100%; margin-top:8px;">
@@ -274,23 +251,26 @@
       </div>
     </div>
   </div>
-  <script>
-    function updateColorPreview() {
-      const acceptColor = document.getElementById('acceptColor').value.trim();
-      const rejectColor = document.getElementById('rejectColor').value.trim();
-      const acceptBtn = document.getElementById('acceptPreviewBtn');
-      const rejectBtn = document.getElementById('rejectPreviewBtn');
-      // Only update if valid hex (3 or 6 digits, with or without #)
-      const hexRegex = /^#?[0-9A-Fa-f]{6}$|^#?[0-9A-Fa-f]{3}$/;
-      if (acceptBtn) {
-        acceptBtn.style.background = hexRegex.test(acceptColor) ? (acceptColor.startsWith('#') ? acceptColor : '#' + acceptColor) : '#4CAF50';
-      }
-      if (rejectBtn) {
-        rejectBtn.style.background = hexRegex.test(rejectColor) ? (rejectColor.startsWith('#') ? rejectColor : '#' + rejectColor) : '#B00020';
-      }
-    }
-    document.addEventListener('DOMContentLoaded', updateColorPreview);
-  </script>
+  
+
+<script type="module" src="script.js"></script>
+<script>
+function updateColorPreview() {
+  const acceptColor = document.getElementById('acceptColor').value.trim();
+  const rejectColor = document.getElementById('rejectColor').value.trim();
+  const acceptBtn = document.getElementById('acceptPreviewBtn');
+  const rejectBtn = document.getElementById('rejectPreviewBtn');
+  // Only update if valid hex (3 or 6 digits, with or without #)
+  const hexRegex = /^#?[0-9A-Fa-f]{6}$|^#?[0-9A-Fa-f]{3}$/;
+  if (acceptBtn) {
+    acceptBtn.style.background = hexRegex.test(acceptColor) ? (acceptColor.startsWith('#') ? acceptColor : '#' + acceptColor) : '#4CAF50';
+  }
+  if (rejectBtn) {
+    rejectBtn.style.background = hexRegex.test(rejectColor) ? (rejectColor.startsWith('#') ? rejectColor : '#' + rejectColor) : '#B00020';
+  }
+}
+document.addEventListener('DOMContentLoaded', updateColorPreview);
+</script>
 <script>
   const pcSection = document.getElementById('PastoralCareSection');
   const emailingSection = document.getElementById('EmailingSection');
@@ -311,12 +291,8 @@
     const copyBtn = document.getElementById('copyCombinedBtn');
     const dlBtn = document.getElementById('downloadCombinedBtn');
     if (copyBtn) copyBtn.addEventListener('click', () => {
-      const combinedTextarea = document.getElementById('combinedOutput');
-      if (combinedTextarea) {
-        combinedTextarea.select();
-        document.execCommand('copy');
-        alert('Combined code copied to clipboard!');
-      }
+      updateCombinedOutput();
+      navigator.clipboard.writeText(document.getElementById('combinedOutput').value);
     });
     if (dlBtn) dlBtn.addEventListener('click', () => {
       updateCombinedOutput();
@@ -347,47 +323,18 @@
     const combined = document.getElementById('restoreCombinedInput')?.value || document.getElementById('combinedOutput')?.value || '';
     if (!combined.trim()) return alert('No combined code provided');
     // Ensure UI is in combined mode
-    // Split the combined code by <script> tags
-    const scriptRegex = /<script>([\s\S]*?)<\/script>/gi;
-    const matches = [...combined.matchAll(scriptRegex)];
-    let loaderPart = '';
-    let functionsPart = '';
-    if (matches.length === 1) {
-      // If only one <script> block, split loader and module code by the first blank line
-      const scriptContent = matches[0][1];
-      // Try to split by two newlines (between loader and module code)
-      const splitIndex = scriptContent.indexOf('\n');
-      if (splitIndex !== -1) {
-        loaderPart = scriptContent.substring(0, splitIndex).trim();
-        functionsPart = scriptContent.substring(splitIndex).trim();
-      } else {
-        loaderPart = scriptContent.trim();
-      }
-    } else if (matches.length > 1) {
-      // If two <script> blocks, treat first as loader, second as module code
-      loaderPart = matches[0][1].trim();
-      functionsPart = matches[1][1].trim();
-    } else {
-      // Fallback: try to split by marker or just assign all to loader
-      const parts = combined.split('\n\n// ---- SPLIT ----\n\n');
-      loaderPart = parts[0] || '';
-      functionsPart = parts.slice(1).join('\n\n// ---- SPLIT ----\n\n') || '';
-    }
+    const switchEl = document.getElementById('outputModeSwitch');
+    if (switchEl && !switchEl.checked) { switchEl.checked = true; toggleOutputMode(); }
+    // Split using the marker we used when combining
+    const parts = combined.split('\n\n// ---- SPLIT ----\n\n');
+    const loaderPart = parts[0] || '';
+    const functionsPart = parts.slice(1).join('\n\n// ---- SPLIT ----\n\n') || '';
     // Put into restore textareas and call existing restore functions
     if (loaderPart) document.getElementById('restoreInput').value = loaderPart;
     if (functionsPart) document.getElementById('restoreFunctionsInput').value = functionsPart;
     // Call the restore routines
     try { restoreAllConfig(); } catch (e) { console.warn('restoreAllConfig failed', e); }
     try { restoreFunctionsConfig(); } catch (e) { console.warn('restoreFunctionsConfig failed', e); }
-    // Ensure module switches and sections are updated
-    ['PastoralCare', 'Emailing', 'News'].forEach(section => {
-      const checkbox = document.getElementById(section);
-      if (checkbox) {
-        // If restore logic sets a value, ensure UI reflects it
-        toggleSection(section);
-        updateSwitchLabel(section);
-      }
-    });
     alert('Restore attempted. Check UI for updated settings.');
   }
 </script>

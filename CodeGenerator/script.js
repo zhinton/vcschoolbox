@@ -215,13 +215,8 @@ const modules = ${JSON.stringify(modules, null, 2)};
   }
 
   // Build variable declarations for all options
-  // Place config variables and special codes at the very top of functionsCode
-  let functionsConfigVars = '';
-  functionsConfigVars += `const JavaScriptURL = ${JSON.stringify(JavaScriptURL)};\n`;
-  functionsConfigVars += `const acceptColor = ${JSON.stringify(acceptColor)};\n`;
-  functionsConfigVars += `const rejectColor = ${JSON.stringify(rejectColor)};\n`;
-  functionsConfigVars += `const modules = ${JSON.stringify(modules, null, 2)};\n`;
-  let functionsCode = functionsConfigVars + subtypeSeverityCode + subtypeAlertCode + actionCheckerCode;
+  // Place special codes at the very top of functionsCode
+  let functionsCode = subtypeSeverityCode + subtypeAlertCode + actionCheckerCode;
   Object.entries(allOptions).forEach(([fn, opts]) => {
     Object.entries(opts).forEach(([key, value]) => {
       // Variable name: functionname_key (e.g. forcedConfidential_type)
@@ -261,17 +256,13 @@ const modules = ${JSON.stringify(modules, null, 2)};
   // Show the generated code in the output textareas
   document.getElementById('output').value = loaderCode;
   document.getElementById('functionsOutput').value = functionsCode;
-  // For combined output, put all functions code first, then loader <script> at the end
+  // Also update the combined output area directly so it's current immediately
   try {
     const combinedEl = document.getElementById('combinedOutput');
     if (combinedEl) {
-      const fn = functionsCode || '';
       const out = loaderCode || '';
-  // Remove all <script> and </script> tags from loaderCode and module code
-  const loaderScript = out.replace(/<script>/gi, '').replace(/<\/script>/gi, '').trim();
-  const moduleCode = fn.replace(/<script>/gi, '').replace(/<\/script>/gi, '').trim();
-  // Place a single <script> block at the top and bottom
-  combinedEl.value = ['<script>', loaderScript, moduleCode, '</script>'].filter(Boolean).join('\n');
+      const fn = functionsCode || '';
+      combinedEl.value = [out.trim(), fn.trim()].filter(Boolean).join('\n\n// ---- SPLIT ----\n\n');
     }
   } catch (e) {
     // ignore any DOM errors
@@ -295,20 +286,10 @@ function downloadFunctionsCode() {
 }
 
 function copyCode() {
-  // Copy from the correct output area depending on mode
-  const combinedArea = document.getElementById('combinedOutputArea');
-  const splitArea = document.getElementById('splitOutputArea');
-  let textarea;
-  if (combinedArea && combinedArea.style.display !== 'none') {
-    textarea = document.getElementById('combinedOutput');
-  } else {
-    textarea = document.getElementById('output');
-  }
-  if (textarea) {
-    textarea.select();
-    document.execCommand('copy');
-    alert('Code copied to clipboard!');
-  }
+  const output = document.getElementById('output');
+  output.select();
+  document.execCommand('copy');
+  alert('Code copied to clipboard!');
 }
 
 function downloadCode() {
