@@ -16,6 +16,7 @@ document.querySelector('.submit').addEventListener('mouseover', (event) => {
     console.log('Selected items:', items.map(item => item.textContent.trim()));
 
     let missingTagsMessages = [];
+    let promptedNoTagList = false;
 
     for (let i = 0; i < pastoralDropdown.options.length; i++) {
         const option = pastoralDropdown.options[i];
@@ -25,17 +26,24 @@ document.querySelector('.submit').addEventListener('mouseover', (event) => {
                 console.log('Selected action:', actions[selectedActionIndex]);
 
                 const requiredTags = tagLists[selectedActionIndex];
-                const hasRequiredTags = items.some(item => {
-                    const itemText = item.textContent.replace('×', '').trim();
-                    console.log('Checking item:', itemText);
-                    return requiredTags.includes(itemText);
-                });
+                if (!requiredTags || requiredTags.length === 0) {
+                    if (!promptedNoTagList) {
+                        missingTagsMessages.push(`<li>${messages[selectedActionIndex]}</li>`);
+                        promptedNoTagList = true;
+                    }
+                } else {
+                    const hasRequiredTags = items.some(item => {
+                        const itemText = item.textContent.replace('×', '').trim();
+                        console.log('Checking item:', itemText);
+                        return requiredTags.includes(itemText);
+                    });
 
-                console.log('Required tags:', requiredTags);
-                console.log('Has required tags:', hasRequiredTags);
+                    console.log('Required tags:', requiredTags);
+                    console.log('Has required tags:', hasRequiredTags);
 
-                if (!hasRequiredTags) {
-                    missingTagsMessages.push(`<li>${messages[selectedActionIndex]} Options: ${requiredTags.join(', ')}</li>`);
+                    if (!hasRequiredTags) {
+                        missingTagsMessages.push(`<li>${messages[selectedActionIndex]} Options: ${requiredTags.join(', ')}</li>`);
+                    }
                 }
             }
         }

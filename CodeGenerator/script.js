@@ -1,3 +1,294 @@
+// Make addDynamicRow globally available for fillDynamicRows and restore logic
+function addDynamicRow(container, fields) {
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.gap = '8px';
+  row.style.alignItems = 'center';
+  row.style.width = '100%';
+  fields.forEach((field, i) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = field.placeholder;
+    input.value = field.value || '';
+    input.style.width = field.width;
+    input.style.display = 'inline-block';
+    input.style.verticalAlign = 'middle';
+    // Add _alert suffix to Subtype Alert Pairs fields for uniqueness
+    if (container.id === 'pcFunction-subtypeAlertPairs') {
+      input.id = `${field.placeholder.replace(/\s+/g, '_').toLowerCase()}_${i}_alert`;
+    }
+    row.appendChild(input);
+  });
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '–';
+  removeBtn.title = 'Remove this row';
+  removeBtn.className = 'row-action-btn';
+  removeBtn.onclick = () => {
+    container.removeChild(row);
+    // Optionally update add button visibility if needed
+  };
+  row.appendChild(removeBtn);
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.textContent = '+';
+  addBtn.title = 'Add another row';
+  addBtn.className = 'row-action-btn';
+  addBtn.onclick = () => {
+    addDynamicRow(container, fields.map(f => ({ ...f, value: '' })));
+    updateAddBtnVisibility(container);
+  };
+  row.appendChild(addBtn);
+  container.appendChild(row);
+  updateAddBtnVisibility(container);
+}
+
+function updateAddBtnVisibility(container) {
+  const rows = container.querySelectorAll('div');
+  rows.forEach((r, idx) => {
+    const btn = r.querySelector('button.row-action-btn:last-of-type');
+    if (btn) btn.style.display = idx === rows.length - 1 ? 'inline-block' : 'none';
+  });
+// End of updateAddBtnVisibility
+}
+// Make fillDynamicRows globally available for restore logic and dynamic row creation
+function fillDynamicRows(container, data, fieldDefs) {
+  container.innerHTML = '';
+  if (Array.isArray(data) && data.length > 0) {
+    data.forEach(item => {
+      // For Subtype Alert Pairs, accept both 'Message' and 'Alert Message' as placeholder
+      let fields = fieldDefs.map((def, i) => {
+        let placeholder = def.placeholder;
+        let value = item[i];
+        if (container.id === 'pcFunction-subtypeAlertPairs' && i === 1) {
+          // Always use 'Alert Message' as placeholder for the second field
+          placeholder = 'Alert Message';
+        }
+        return { ...def, value, placeholder };
+      });
+      if (typeof addDynamicRow === 'function') {
+        addDynamicRow(container, fields);
+      } else if (container.addDynamicRow) {
+        container.addDynamicRow(fields);
+      }
+    });
+    updateAddBtnVisibility(container);
+  } else {
+    // Add one empty row by default
+    if (typeof addDynamicRow === 'function') {
+      addDynamicRow(container, fieldDefs);
+    } else if (container.addDynamicRow) {
+      container.addDynamicRow(fieldDefs);
+    }
+    updateAddBtnVisibility(container);
+  }
+}
+function restoreCombinedConfig() {
+  // Restore dynamic rows for Action Checker
+  function parseArrayVar(varName) {
+    // Match: const actionCheckerRows = [ ... ]; (allow spaces, newlines, trailing comma)
+    const arrMatch = code.match(new RegExp(`const\\s+${varName}\\s*=\\s*(\\[[\\s\\S]*?\\]);`, 'm'));
+    if (arrMatch) {
+      let arrStr = arrMatch[1]
+        .replace(/(,)(\\s*\\])/g, '$2') // Remove trailing comma before ]
+        .replace(/\r?\n/g, ' ') // Remove newlines
+        .replace(/\s+/g, ' '); // Collapse whitespace
+      // Try to fix single quotes to double quotes for JSON.parse
+      let jsonStr = arrStr.replace(/'/g, '"');
+      try {
+        return JSON.parse(jsonStr);
+      } catch (e) {
+        try {
+          // Fallback: use eval if JSON.parse fails
+          // eslint-disable-next-line no-eval
+          return eval(arrStr);
+        } catch (err) {
+          console.error('Failed to parse array for', varName, arrStr, err);
+        }
+      }
+    } else {
+      // Try to find the array with a more lenient regex (missing semicolon, etc)
+      const looseMatch = code.match(new RegExp(`${varName}\\s*=\\s*(\\[[\\s\\S]*?\\])`, 'm'));
+      if (looseMatch) {
+        let arrStr = looseMatch[1]
+          .replace(/(,)(\\s*\\])/g, '$2')
+          .replace(/\r?\n/g, ' ')
+          .replace(/\s+/g, ' ');
+        let jsonStr = arrStr.replace(/'/g, '"');
+        try {
+          return JSON.parse(jsonStr);
+        } catch (e) {
+          try {
+            // eslint-disable-next-line no-eval
+            return eval(arrStr);
+          } catch (err) {
+            console.error('Failed to parse array for', varName, arrStr, err);
+          }
+        }
+      }
+    }
+    return null;
+  }
+  setTimeout(() => {
+    // Action Checker
+    const actionCheckerArr = parseArrayVar('actionCheckerRows');
+    console.log('[Restore] Parsed actionCheckerRows:', actionCheckerArr);
+    const actionCheckerEntry = document.getElementById('pcFunction-actionChecker')?.closest('.function-entry');
+    if (actionCheckerEntry) {
+      const rowsDiv = actionCheckerEntry.querySelector('div.hover-options-row');
+      if (rowsDiv) {
+        console.log(`[Restore] Adding ${Array.isArray(actionCheckerArr) ? actionCheckerArr.length : 0} Action Checker rows.`);
+        fillDynamicRows(rowsDiv, actionCheckerArr, [
+          { placeholder: 'Action', width: '120px' },
+          { placeholder: 'Tag List (comma separated)', width: '180px' },
+          { placeholder: 'Message', width: '220px' }
+        ]);
+      } else {
+        console.warn('[Restore] Could not find Action Checker rowsDiv.');
+      }
+    } else {
+      console.warn('[Restore] Could not find Action Checker entry.');
+    }
+
+    // Subtype Severity
+    const subtypeSeverityArr = parseArrayVar('subtypeSeverity');
+    console.log('[Restore] Parsed subtypeSeverity:', subtypeSeverityArr);
+    const subtypeSeverityEntry = document.getElementById('pcFunction-subtypeSeverity')?.closest('.function-entry');
+    if (subtypeSeverityEntry) {
+      const rowsDiv = subtypeSeverityEntry.querySelector('div.hover-options-row');
+      if (rowsDiv) {
+        console.log(`[Restore] Adding ${Array.isArray(subtypeSeverityArr) ? subtypeSeverityArr.length : 0} Subtype Severity rows.`);
+        fillDynamicRows(rowsDiv, subtypeSeverityArr, [
+          { placeholder: 'Subtype', width: '180px' },
+          { placeholder: 'Severity', width: '120px' }
+        ]);
+      } else {
+        console.warn('[Restore] Could not find Subtype Severity rowsDiv.');
+      }
+    } else {
+      console.warn('[Restore] Could not find Subtype Severity entry.');
+    }
+
+    // Subtype Alert
+    const subtypeAlertPairsArr = parseArrayVar('subtypeAlertPairs');
+    console.log('[Restore] Parsed subtypeAlertPairs:', subtypeAlertPairsArr);
+    const subtypeAlertEntry = document.getElementById('pcFunction-subtypeAlert')?.closest('.function-entry');
+    if (subtypeAlertEntry) {
+      const rowsDiv = subtypeAlertEntry.querySelector('div.hover-options-row');
+      if (rowsDiv) {
+        console.log(`[Restore] Adding ${Array.isArray(subtypeAlertPairsArr) ? subtypeAlertPairsArr.length : 0} Subtype Alert rows.`);
+        fillDynamicRows(rowsDiv, subtypeAlertPairsArr, [
+          { placeholder: 'Subtype', width: '180px' },
+          { placeholder: 'Message', width: '260px' }
+        ]);
+      } else {
+        console.warn('[Restore] Could not find Subtype Alert rowsDiv.');
+      }
+    } else {
+      console.warn('[Restore] Could not find Subtype Alert entry.');
+    }
+    // Optionally, trigger change events to show/hide options UI
+    ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
+      document.querySelectorAll(`.${className}`).forEach(cb => {
+        cb.dispatchEvent(new Event('change'));
+      });
+    });
+  }, 0);
+  const code = document.getElementById('restoreCombinedInput').value;
+  // Re-enable function checkboxes based on script block comments
+  const scriptBlockRegex = /\/\/ ---- scripts\/([a-zA-Z0-9_]+)\.js ----/g;
+  let scriptMatch;
+  while ((scriptMatch = scriptBlockRegex.exec(code)) !== null) {
+    const fn = scriptMatch[1];
+    const pcCheckbox = document.querySelector(`.pcFunction[value="${fn}"]`);
+    const emailCheckbox = document.querySelector(`.emailFunction[value="${fn}"]`);
+    const newsCheckbox = document.querySelector(`.newsFunction[value="${fn}"]`);
+    if (pcCheckbox) pcCheckbox.checked = true;
+    if (emailCheckbox) emailCheckbox.checked = true;
+    if (newsCheckbox) newsCheckbox.checked = true;
+  }
+  // Helper to extract string values
+  function getString(name) {
+    const match = code.match(new RegExp(`const\\s+${name}\\s*=\\s*['\"]([^'\"]*)['\"]`));
+    return match ? match[1] : '';
+  }
+  function getWindowString(name) {
+    const match = code.match(new RegExp(`window\\.${name}\\s*=\\s*['\"]([^'\"]*)['\"]`));
+    return match ? match[1] : '';
+  }
+  function getModules() {
+    const match = code.match(/const modules = (\{[\s\S]*?\});/);
+    if (match) {
+      try {
+        return JSON.parse(match[1].replace(/(\w+):/g, '"$1":').replace(/'/g, '"'));
+      } catch (e) {}
+    }
+    return {};
+  }
+  // Set color fields
+  document.getElementById('acceptColor').value = getWindowString('acceptColor') || getString('acceptColor');
+  document.getElementById('rejectColor').value = getWindowString('rejectColor') || getString('rejectColor');
+  // Set module checkboxes
+  const modules = getModules();
+  ['PastoralCare', 'Emailing', 'News'].forEach(mod => {
+    const cb = document.getElementById(mod);
+    if (cb && typeof modules[mod] === 'boolean') {
+      cb.checked = modules[mod];
+      toggleSection(mod);
+    }
+  });
+  // Restore function checkboxes and options
+  const varRegex = /const\s+([a-zA-Z0-9_]+)_([a-zA-Z0-9_]+)\s*=\s*(["'`])([\s\S]*?)\3;/g;
+  let match;
+  while ((match = varRegex.exec(code)) !== null) {
+    const [_, fn, key, , value] = match;
+    const pcInput = document.getElementById(`pcFunction-${fn}-${key}`);
+    const emailInput = document.getElementById(`emailFunction-${fn}-${key}`);
+    const newsInput = document.getElementById(`newsFunction-${fn}-${key}`);
+    if (pcInput) pcInput.value = value;
+    if (emailInput) emailInput.value = value;
+    if (newsInput) newsInput.value = value;
+    // Also check the checkbox for this function
+    const pcCheckbox = document.querySelector(`.pcFunction[value="${fn}"]`);
+    const emailCheckbox = document.querySelector(`.emailFunction[value="${fn}"]`);
+    const newsCheckbox = document.querySelector(`.newsFunction[value="${fn}"]`);
+    if (pcCheckbox) pcCheckbox.checked = true;
+    if (emailCheckbox) emailCheckbox.checked = true;
+    if (newsCheckbox) newsCheckbox.checked = true;
+  }
+  // Optionally, trigger change events to show/hide options UI
+  ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
+    document.querySelectorAll(`.${className}`).forEach(cb => {
+      cb.dispatchEvent(new Event('change'));
+    });
+  });
+}
+window.restoreCombinedConfig = restoreCombinedConfig;
+// Combine loader and functions code for Schoolbox
+function generateCombinedOutput() {
+  // Get split outputs
+  const loaderCode = document.getElementById('output').value;
+  const functionsCode = document.getElementById('functionsOutput').value;
+
+  // Remove all <script> tags
+  let combined = (loaderCode + '\n' + functionsCode)
+    .replace(/<script>/gi, '')
+    .replace(/<\/script>/gi, '');
+
+  // Move all variable declarations to the top
+  const varRegex = /^(\s*const\s+[a-zA-Z0-9_]+\s*=.*;\s*)/gm;
+  const vars = Array.from(combined.matchAll(varRegex)).map(m => m[0]).join('\n');
+  combined = combined.replace(varRegex, '');
+
+  // Remove extra blank lines
+  combined = combined.replace(/\n{3,}/g, '\n\n');
+
+  // Wrap in a single <script> block
+  combined = `<script>\n${vars}\n${combined.trim()}\n</script>`;
+
+  document.getElementById('combinedOutput').value = combined;
+}
+window.generateCombinedOutput = generateCombinedOutput;
 import { PastoralCare, Emailing, New } from './ModuleFunctions.js';
 
 // Only one definition!
@@ -21,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     combinedTabEl.addEventListener('click', () => {
       setOutputMode('combined');
+      generateCombinedOutput();
     });
   }
 // Tab switching function: only show relevant output area and update tab styling
@@ -60,10 +352,9 @@ function setOutputMode(mode) {
 
   const generateBtn = document.querySelector('button.generate-btn');
   if (generateBtn) {
-    generateBtn.addEventListener('click', () => {
-      if (typeof window.combineRelevantFiles === 'function') {
-        window.combineRelevantFiles();
-      }
+    generateBtn.addEventListener('click', async () => {
+      await generateCode();
+      generateCombinedOutput();
     });
   }
   document.querySelector('button[onclick="copyCode()"]').addEventListener('click', copyCode);
@@ -207,13 +498,13 @@ const modules = ${JSON.stringify(modules, null, 2)};
   // --- Special handling for subtypeAlert.js dynamic pairs ---
   let subtypeAlertCode = '';
   if (selectedPastoralCare.includes('subtypeAlert')) {
-    const entry = document.getElementById('pcFunction-subtypeAlert')?.closest('.function-entry');
+    const entry = document.getElementById('pcFunction-subtypeAlertPairs')?.closest('.function-entry');
     if (entry) {
       const pairs = [];
       const seen = new Set();
       entry.querySelectorAll('div').forEach(row => {
         const subtypeInput = row.querySelector('input[placeholder="Subtype"]');
-        const messageInput = row.querySelector('input[placeholder="Message"]');
+        const messageInput = row.querySelector('input[placeholder="Alert Message"]');
         if (subtypeInput && messageInput) {
           const subtype = subtypeInput.value.trim();
           const message = messageInput.value.trim();
