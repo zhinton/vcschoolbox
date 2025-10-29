@@ -105,6 +105,9 @@
   </form>
 
   <h2>Generated Schoolbox Scripts</h2>
+  <div style="font-size:1em; color:#0066B0; margin-bottom:8px; font-weight:500;">
+    <b>Note:</b> To use the combined code, copy and paste it into the <b>Custom JavaScript</b> section found in <b>Administration &gt; System settings</b> and then <b>Site</b> in Schoolbox.
+  </div>
   <!-- Option to combine into one file or keep split files (switch) -->
   <div style="margin-bottom: 8px; display:flex; align-items:center; gap:12px;">
     <div class="tab-container" style="display: flex; width: 100%; margin-bottom: 16px;">
@@ -281,20 +284,6 @@ function updateColorPreview() {
 document.addEventListener('DOMContentLoaded', updateColorPreview);
 </script>
 <script>
-  const pcSection = document.getElementById('PastoralCareSection');
-  const emailingSection = document.getElementById('EmailingSection');
-  const newsSection = document.getElementById('NewsSection');
-
-  // ...existing code...
-
-  // Build combined content from the two generated textareas
-  // function updateCombinedOutput() {
-  //   const out = document.getElementById('output')?.value || '';
-  //   const fn = document.getElementById('functionsOutput')?.value || '';
-  //   const combined = [out.trim(), fn.trim()].filter(Boolean).join('\n\n// ---- SPLIT ----\n\n');
-  //   document.getElementById('combinedOutput').value = combined;
-  // }
-
   // Wire up copy/download for combined
   document.addEventListener('DOMContentLoaded', () => {
     // Tab switching logic: Combined is default
@@ -338,10 +327,7 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
     });
   });
 
-  // Restore combined content by splitting into loader and functions parts
-  // function restoreCombinedConfig() {
-  //   // Disabled automatic population of combined output
-  // }
+  // ...existing code...
 </script>
 </body>
 </html>

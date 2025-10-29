@@ -340,39 +340,46 @@ function populateFunctionSections() {
     const div = document.createElement('div');
     div.className = 'function-entry';
 
-    // Header: Checkbox + Name + Description
-    const header = document.createElement('div');
-    header.className = 'function-header';
+  // Header: Checkbox + Name + Description (aligned)
+  const header = document.createElement('div');
+  header.className = 'function-header';
+  header.style.display = 'flex';
+  header.style.flexDirection = 'row';
+  header.style.alignItems = 'center';
+  header.style.gap = '12px';
 
-    const checkboxId = `${className}-${item.fileName.replace('.js', '')}`;
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = className;
-    checkbox.value = item.fileName.replace('.js', '');
-    checkbox.checked = false; // <-- Default to unchecked
-    checkbox.id = checkboxId;
+  const checkboxId = `${className}-${item.fileName.replace('.js', '')}`;
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.className = className;
+  checkbox.value = item.fileName.replace('.js', '');
+  checkbox.checked = false; // <-- Default to unchecked
+  checkbox.id = checkboxId;
 
-    const label = document.createElement('label');
-    label.setAttribute('for', checkboxId);
-    label.textContent = item.name;
+  const label = document.createElement('label');
+  label.setAttribute('for', checkboxId);
+  label.textContent = item.name;
+  label.style.minWidth = '180px';
+  label.style.display = 'inline-block';
 
-    const desc = document.createElement('span');
-    desc.className = 'function-desc';
-    desc.textContent = `- ${item.description}`;
+  const desc = document.createElement('span');
+  desc.className = 'function-desc';
+  desc.textContent = item.description;
+  desc.style.marginLeft = '0';
+  desc.style.display = 'inline-block';
+  desc.style.minWidth = '320px';
+  desc.style.textAlign = 'left';
 
-    header.appendChild(checkbox);
-    header.appendChild(label);
-    header.appendChild(desc);
+  header.appendChild(checkbox);
+  header.appendChild(label);
+  header.appendChild(desc);
 
-    div.appendChild(header);
+  div.appendChild(header);
 
     // Options for Hover Effect (in a row)
     if (item.fileName === "hoverEffect.js" && item.options && item.options.length > 0) {
       // Options title
-      const optionsTitle = document.createElement('div');
-      optionsTitle.className = 'options-title';
-      optionsTitle.textContent = item.description;;
-      optionsTitle.style.display = 'none';
+  // Removed options-title div
 
       // Options row
       const optionsDiv = document.createElement('div');
@@ -392,13 +399,14 @@ function populateFunctionSections() {
 
         optLabel.appendChild(optInput);
 
-        // Add a hoverable ? for Image ID
-        if (opt.key === "imageID") {
+        // Add a help '?' if help_text exists
+        if (opt.help_text) {
           const help = document.createElement('span');
           help.textContent = ' ?';
-          help.title = 'To find this, add your image to Schoolbox and open the image through the resource browser. You will find the ID in the URL after send.php?id=';
+          help.title = opt.help_text;
           help.style.color = '#0074D9';
           help.style.fontWeight = 'bold';
+          help.style.cursor = 'help';
           optLabel.appendChild(help);
         }
 
@@ -408,20 +416,16 @@ function populateFunctionSections() {
       // Show/hide options when checkbox is toggled
       checkbox.addEventListener('change', () => {
         optionsDiv.style.display = checkbox.checked ? 'flex' : 'none';
-        optionsTitle.style.display = checkbox.checked ? 'block' : 'none';
       });
 
-      div.appendChild(optionsTitle);
+  // Removed options-title div
       div.appendChild(optionsDiv);
     }
 
     // Options for Subtype Severity (dynamic pairs)
     else if (item.fileName === "subtypeSeverity.js" && item.options && item.options.length > 0) {
       // Options title
-      const optionsTitle = document.createElement('div');
-      optionsTitle.className = 'options-title';
-      optionsTitle.textContent = 'Add pairs of Subtype and Category.';
-      optionsTitle.style.display = 'none';
+  // Removed options-title div
 
       // Container for all pairs
       const pairsDiv = document.createElement('div');
@@ -432,26 +436,63 @@ function populateFunctionSections() {
 
 
       // Generic function to add a row to a container
+      function updateAddBtnVisibility(container) {
+        const rows = container.querySelectorAll('div');
+        rows.forEach((r, idx) => {
+          const btn = r.querySelector('button.row-action-btn:last-of-type');
+          if (btn) btn.style.display = idx === rows.length - 1 ? 'inline-block' : 'none';
+        });
+      }
+
       function addDynamicRow(container, fields) {
         const row = document.createElement('div');
         row.style.display = 'flex';
         row.style.gap = '8px';
         row.style.alignItems = 'center';
-        fields.forEach(field => {
+        row.style.width = '100%';
+        fields.forEach((field, i) => {
           const input = document.createElement('input');
           input.type = 'text';
           input.placeholder = field.placeholder;
           input.value = field.value || '';
           input.style.width = field.width;
+          input.style.display = 'inline-block';
+          input.style.verticalAlign = 'middle';
           row.appendChild(input);
+          // Add help icon for Subtype and Category if help_text exists in item.options[0]
+          if (item.options && item.options[0] && item.options[0].help_text) {
+            const help = document.createElement('span');
+            help.textContent = ' ?';
+            help.title = item.options[0].help_text;
+            help.style.color = '#0074D9';
+            help.style.fontWeight = 'bold';
+            help.style.cursor = 'help';
+            row.appendChild(help);
+          }
         });
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.textContent = '–';
         removeBtn.title = 'Remove this row';
-        removeBtn.onclick = () => container.removeChild(row);
+        removeBtn.className = 'row-action-btn';
+        removeBtn.onclick = () => {
+          container.removeChild(row);
+          updateAddBtnVisibility(container);
+        };
         row.appendChild(removeBtn);
+        // Add (+) button to the right of removeBtn
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.textContent = '+';
+        addBtn.title = 'Add another row';
+        addBtn.className = 'row-action-btn';
+        addBtn.onclick = () => {
+          addDynamicRow(container, fields.map(f => ({ ...f, value: '' })));
+          updateAddBtnVisibility(container);
+        };
+        row.appendChild(addBtn);
         container.appendChild(row);
+        updateAddBtnVisibility(container);
       }
 
       // Helper to clear and fill container with data
@@ -468,43 +509,20 @@ function populateFunctionSections() {
         }
       }
 
-      // Add button to add more pairs
-      const addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.textContent = '+';
-      addBtn.title = 'Add another pair';
-      addBtn.style.marginTop = '4px';
-      addBtn.style.display = 'none';
-
-      // For subtypeSeverity
+      // Fill initial rows for dynamic pairs/rows
       if (item.fileName === "subtypeSeverity.js") {
-        addBtn.onclick = () => addDynamicRow(pairsDiv, [
-          { placeholder: 'Subtype', width: '180px' },
-          { placeholder: 'Category', width: '120px' }
-        ]);
         fillDynamicRows(pairsDiv, null, [
           { placeholder: 'Subtype', width: '180px' },
           { placeholder: 'Category', width: '120px' }
         ]);
       }
-      // For subtypeAlert
       else if (item.fileName === "subtypeAlert.js") {
-        addBtn.onclick = () => addDynamicRow(pairsDiv, [
-          { placeholder: 'Subtype', width: '180px' },
-          { placeholder: 'Message', width: '260px' }
-        ]);
         fillDynamicRows(pairsDiv, null, [
           { placeholder: 'Subtype', width: '180px' },
           { placeholder: 'Message', width: '260px' }
         ]);
       }
-      // For actionChecker
       else if (item.fileName === "actionChecker.js") {
-        addBtn.onclick = () => addDynamicRow(pairsDiv, [
-          { placeholder: 'Action', width: '120px' },
-          { placeholder: 'Tag List (comma separated)', width: '180px' },
-          { placeholder: 'Message', width: '220px' }
-        ]);
         fillDynamicRows(pairsDiv, null, [
           { placeholder: 'Action', width: '120px' },
           { placeholder: 'Tag List (comma separated)', width: '180px' },
@@ -512,32 +530,26 @@ function populateFunctionSections() {
         ]);
       }
 
-      // Container for pairs and addBtn
+      // Container for pairs only (no addBtn)
       const container = document.createElement('div');
       container.style.display = 'flex';
       container.style.flexDirection = 'column';
       container.style.gap = '4px';
       container.appendChild(pairsDiv);
-      container.appendChild(addBtn);
 
       // Show/hide on checkbox toggle
       checkbox.addEventListener('change', () => {
-        optionsTitle.style.display = checkbox.checked ? 'block' : 'none';
         pairsDiv.style.display = checkbox.checked ? 'flex' : 'none';
-        addBtn.style.display = checkbox.checked ? 'inline-block' : 'none';
       });
 
-      div.appendChild(optionsTitle);
+  // Removed options-title div
       div.appendChild(container);
     }
 
     // Options for Subtype Alert (dynamic pairs)
     else if (item.fileName === "subtypeAlert.js" && item.options && item.options.length > 0) {
       // Options title
-      const optionsTitle = document.createElement('div');
-      optionsTitle.className = 'options-title';
-      optionsTitle.textContent = 'Add pairs of Subtype and the message to display.';
-      optionsTitle.style.display = 'none';
+  // Removed options-title div
 
       // Container for all pairs
       const pairsDiv = document.createElement('div');
@@ -558,67 +570,82 @@ function populateFunctionSections() {
         subtypeInput.placeholder = 'Subtype';
         subtypeInput.value = subtype;
         subtypeInput.style.width = '180px';
+        row.appendChild(subtypeInput);
+        // Add help icon if help_text exists for subtype
+        if (item.options && item.options[0] && item.options[0].help_text) {
+          const help = document.createElement('span');
+          help.textContent = ' ?';
+          help.title = item.options[0].help_text;
+          help.style.color = '#0074D9';
+          help.style.fontWeight = 'bold';
+          help.style.cursor = 'help';
+          row.appendChild(help);
+        }
 
         const messageInput = document.createElement('input');
         messageInput.type = 'text';
         messageInput.placeholder = 'Message';
         messageInput.value = message;
         messageInput.style.width = '260px';
-
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.textContent = '–';
-        removeBtn.title = 'Remove this pair';
-        removeBtn.onclick = () => pairsDiv.removeChild(row);
-
-        row.appendChild(subtypeInput);
         row.appendChild(messageInput);
-        row.appendChild(removeBtn);
 
-        pairsDiv.appendChild(row);
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '–';
+  removeBtn.title = 'Remove this pair';
+  removeBtn.className = 'row-action-btn';
+  removeBtn.onclick = () => pairsDiv.removeChild(row);
+  row.appendChild(removeBtn);
+  // Add (+) button to the right of removeBtn
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.textContent = '+';
+  addBtn.title = 'Add another pair';
+  addBtn.className = 'row-action-btn';
+  addBtn.onclick = () => {
+    addPairRow();
+    updateAddBtnVisibility();
+  };
+  row.appendChild(addBtn);
+  pairsDiv.appendChild(row);
+
+  updateAddBtnVisibility();
+
+  function updateAddBtnVisibility() {
+    const rows = pairsDiv.querySelectorAll('div');
+    rows.forEach((r, idx) => {
+      const btn = r.querySelector('button.row-action-btn:last-of-type');
+      if (btn) btn.style.display = idx === rows.length - 1 ? 'inline-block' : 'none';
+    });
+  }
       }
 
       // Add initial row
       addPairRow();
 
-      // Add button to add more pairs
-      const addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.textContent = '+';
-      addBtn.title = 'Add another pair';
-      addBtn.style.marginTop = '4px';
-      addBtn.onclick = () => addPairRow();
-
-      // Container for pairs and addBtn
-      const container = document.createElement('div');
-      container.style.display = 'flex';
-      container.style.flexDirection = 'column';
-      container.style.gap = '4px';
-      container.appendChild(pairsDiv);
-      container.appendChild(addBtn);
+  // Container for pairs only (no addBtn)
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.gap = '4px';
+  container.appendChild(pairsDiv);
 
       // Show/hide on checkbox toggle
       checkbox.addEventListener('change', () => {
-        optionsTitle.style.display = checkbox.checked ? 'block' : 'none';
         container.style.display = checkbox.checked ? 'flex' : 'none';
         pairsDiv.style.display = checkbox.checked ? 'flex' : 'none';
-        addBtn.style.display = checkbox.checked ? 'inline-block' : 'none';
       });
 
       // Hide container by default
-      container.style.display = 'none';
-
-      div.appendChild(optionsTitle);
+  container.style.display = 'none';
+  // Removed options-title div
       div.appendChild(container);
     }
 
     // Options for Action Checker (dynamic rows)
     else if (item.fileName === "actionChecker.js" && item.options && item.options.length > 0) {
       // Options title
-      const optionsTitle = document.createElement('div');
-      optionsTitle.className = 'options-title';
-      optionsTitle.textContent = 'Configure the action checker settings.';
-      optionsTitle.style.display = 'none';
+  // Removed options-title div
 
       // Container for all rows
       const rowsDiv = document.createElement('div');
@@ -634,80 +661,113 @@ function populateFunctionSections() {
         row.style.gap = '8px';
         row.style.alignItems = 'center';
 
+        // Action input
         const actionInput = document.createElement('input');
         actionInput.type = 'text';
         actionInput.placeholder = 'Action';
         actionInput.value = action;
         actionInput.style.width = '120px';
+        row.appendChild(actionInput);
+        if (item.options && item.options[0] && item.options[0].help_text) {
+          const help = document.createElement('span');
+          help.textContent = ' ?';
+          help.title = item.options[0].help_text;
+          help.style.color = '#0074D9';
+          help.style.fontWeight = 'bold';
+          help.style.cursor = 'help';
+          row.appendChild(help);
+        }
 
+        // Tag List input
         const tagListInput = document.createElement('input');
         tagListInput.type = 'text';
         tagListInput.placeholder = 'Tag List (comma separated)';
         tagListInput.value = tagList;
         tagListInput.style.width = '180px';
+        row.appendChild(tagListInput);
+        if (item.options && item.options[1] && item.options[1].help_text) {
+          const help = document.createElement('span');
+          help.textContent = ' ?';
+          help.title = item.options[1].help_text;
+          help.style.color = '#0074D9';
+          help.style.fontWeight = 'bold';
+          help.style.cursor = 'help';
+          row.appendChild(help);
+        }
 
+        // Message input
         const messageInput = document.createElement('input');
         messageInput.type = 'text';
         messageInput.placeholder = 'Message';
         messageInput.value = message;
         messageInput.style.width = '220px';
-
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.textContent = '–';
-        removeBtn.title = 'Remove this row';
-        removeBtn.onclick = () => rowsDiv.removeChild(row);
-
-        row.appendChild(actionInput);
-        row.appendChild(tagListInput);
         row.appendChild(messageInput);
-        row.appendChild(removeBtn);
+        if (item.options && item.options[2] && item.options[2].help_text) {
+          const help = document.createElement('span');
+          help.textContent = ' ?';
+          help.title = item.options[2].help_text;
+          help.style.color = '#0074D9';
+          help.style.fontWeight = 'bold';
+          help.style.cursor = 'help';
+          row.appendChild(help);
+        }
 
-        rowsDiv.appendChild(row);
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '–';
+  removeBtn.title = 'Remove this row';
+  removeBtn.className = 'row-action-btn';
+  removeBtn.onclick = () => rowsDiv.removeChild(row);
+  row.appendChild(removeBtn);
+  // Add (+) button to the right of removeBtn
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.textContent = '+';
+  addBtn.title = 'Add another row';
+  addBtn.className = 'row-action-btn';
+  addBtn.onclick = () => {
+    addRow();
+    updateAddBtnVisibility();
+  };
+  row.appendChild(addBtn);
+  rowsDiv.appendChild(row);
+
+  updateAddBtnVisibility();
+
+  function updateAddBtnVisibility() {
+    const rows = rowsDiv.querySelectorAll('div');
+    rows.forEach((r, idx) => {
+      const btn = r.querySelector('button.row-action-btn:last-of-type');
+      if (btn) btn.style.display = idx === rows.length - 1 ? 'inline-block' : 'none';
+    });
+  }
       }
 
       // Add initial row
       addRow();
 
-      // Add button to add more rows
-      const addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.textContent = '+';
-      addBtn.title = 'Add another row';
-      addBtn.style.marginTop = '4px';
-      addBtn.onclick = () => addRow();
-
-      // Container for rows and addBtn
-      const container = document.createElement('div');
-      container.style.display = 'flex';
-      container.style.flexDirection = 'column';
-      container.style.gap = '4px';
-      container.appendChild(rowsDiv);
-      container.appendChild(addBtn);
+  // Container for rows only (no addBtn)
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+  container.style.gap = '4px';
+  container.appendChild(rowsDiv);
 
       // Show/hide on checkbox toggle
       checkbox.addEventListener('change', () => {
-        optionsTitle.style.display = checkbox.checked ? 'block' : 'none';
         container.style.display = checkbox.checked ? 'flex' : 'none';
         rowsDiv.style.display = checkbox.checked ? 'flex' : 'none';
-        addBtn.style.display = checkbox.checked ? 'inline-block' : 'none';
       });
 
       // Hide container by default
-      container.style.display = 'none';
-
-      div.appendChild(optionsTitle);
+  container.style.display = 'none';
+  // Removed options-title div
       div.appendChild(container);
     }
 
     // For all other functions with options
     else if (item.options && item.options.length > 0) {
-      // Options title
-      const optionsTitle = document.createElement('div');
-      optionsTitle.className = 'options-title';
-      optionsTitle.textContent = item.description;
-      optionsTitle.style.display = 'none'; // <-- Hide by default
-      div.appendChild(optionsTitle);
+  // Removed options-title div
 
       // Options row
       const optionsDiv = document.createElement('div');
@@ -726,13 +786,14 @@ function populateFunctionSections() {
 
         optLabel.appendChild(optInput);
 
-        // Only add the ? help for Hover Effect's imageID
-        if (item.fileName === "hoverEffect.js" && opt.key === "imageID") {
+        // Add a help '?' if help_text exists
+        if (opt.help_text) {
           const help = document.createElement('span');
           help.textContent = ' ?';
-          help.title = 'To find this, add your image to Schoolbox and open the image through the resource browser. You will find the ID in the URL after send.php?id=';
+          help.title = opt.help_text;
           help.style.color = '#0074D9';
           help.style.fontWeight = 'bold';
+          help.style.cursor = 'help';
           optLabel.appendChild(help);
         }
 
@@ -742,7 +803,6 @@ function populateFunctionSections() {
       // Show/hide options when checkbox is toggled
       checkbox.addEventListener('change', () => {
         optionsDiv.style.display = checkbox.checked ? 'flex' : 'none';
-        optionsTitle.style.display = checkbox.checked ? 'block' : 'none';
       });
 
       div.appendChild(optionsDiv);

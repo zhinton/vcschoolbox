@@ -89,6 +89,14 @@ textarea {
   display: flex;
   gap: 8px;
   align-items: center;
+  width: 100%;
+}
+
+.hover-options-row input[type="text"] {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* Make the input boxes small */
@@ -98,10 +106,11 @@ textarea {
   margin-left: 4px;
 }
 
-.hover-options-row button {
+.row-action-btn {
   width: 28px;
   height: 28px;
   font-size: 1.2em;
   line-height: 1;
   padding: 0;
+  margin-left: 2px;
 }

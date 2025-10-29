@@ -107,27 +107,27 @@ updatePageForConfidentialType();
 
 // ---- scripts/hoverEffect.js ----
 const dropdownMenu = document.getElementById('severityId');
-const hoverImage = document.createElement('img');
-hoverImage.id = 'hoverImage';
-hoverImage.src = `https://${schoolboxDomain}/send.php?id=${hoverEffect_imageID}&height=${hoverEffect_imageHeight}&width=${hoverEffect_imageWidth}`;
-hoverImage.alt = 'Hover Image';
-hoverImage.style.display = 'none';
-hoverImage.style.position = 'absolute';
-hoverImage.style.height = '35REM';
-hoverImage.style.zIndex = '1000';
-document.body.appendChild(hoverImage);
-
-dropdownMenu.addEventListener('mouseover', () => {
-    const rect = dropdownMenu.getBoundingClientRect();
-    hoverImage.style.top = `${rect.top + window.scrollY}px`;
-    hoverImage.style.left = `${rect.right + window.scrollX}px`;
-    hoverImage.style.transform = 'translateY(-50%)';
-    hoverImage.style.display = 'block';
-});
-
-dropdownMenu.addEventListener('mouseout', () => {
+if (dropdownMenu) {
+    const hoverImage = document.createElement('img');
+    hoverImage.id = 'hoverImage';
+    hoverImage.src = `https://${schoolboxDomain}/send.php?id=${hoverEffect_imageID}&height=${hoverEffect_imageHeight}&width=${hoverEffect_imageWidth}`;
+    hoverImage.alt = 'Hover Image';
     hoverImage.style.display = 'none';
-});
+    hoverImage.style.position = 'absolute';
+    hoverImage.style.height = '35REM';
+    hoverImage.style.zIndex = '1000';
+    document.body.appendChild(hoverImage);
+    dropdownMenu.addEventListener('mouseover', () => {
+        const rect = dropdownMenu.getBoundingClientRect();
+        hoverImage.style.top = `${rect.top + window.scrollY}px`;
+        hoverImage.style.left = `${rect.right + window.scrollX}px`;
+        hoverImage.style.transform = 'translateY(-50%)';
+        hoverImage.style.display = 'block';
+    });
+    dropdownMenu.addEventListener('mouseout', () => {
+        hoverImage.style.display = 'none';
+    });
+}
 
 
 // ---- scripts/modal.js ----
@@ -136,8 +136,8 @@ const tabBarElement = document.querySelector('.tab-bar');
 const tabBarColor = tabBarElement ? getComputedStyle(tabBarElement).backgroundColor : null;
 
 // If acceptColor or rejectColor is blank or falsy, use tabBarColor
-window.acceptColor = acceptColor && acceptColor.trim() ? acceptColor : tabBarColor;
-window.rejectColor = rejectColor && rejectColor.trim() ? rejectColor : tabBarColor;
+window.acceptColor = typeof acceptColor !== 'undefined' && acceptColor && acceptColor.trim() ? acceptColor : tabBarColor;
+window.rejectColor = typeof rejectColor !== 'undefined' && rejectColor && rejectColor.trim() ? rejectColor : tabBarColor;
 
 // This is the notification popup code used by other scripts
 // Function to create and show a modal dialog with customizable buttons
@@ -213,5 +213,4 @@ function closeModal() {
     }
 }
 
-window.acceptColor = acceptColor;
-window.rejectColor = rejectColor;
+// ...existing code...

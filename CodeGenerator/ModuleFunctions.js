@@ -2,7 +2,7 @@ export const PastoralCare = [
   {
     order: 1,
     name: "Submit Notification",
-    description: "Promts users to select a subtype if 'Not Selected' is chosen. You will need to add the option 'Not Selected' to your subtype list for this to work.",
+    description: "Promts users to select a subtype if 'Not Selected' is chosen. You will need to add the Subtype 'Not Selected' to your subtype lists for this to work.",
     fileName: "submitNotification.js"
   },
   {
@@ -14,17 +14,20 @@ export const PastoralCare = [
       {
         key: "imageID",
         label: "Image ID",
-        description: "Enter the image ID from your Schoolbox instance."
+        description: "Enter the image ID from your Schoolbox instance.",
+        help_text: "To find this, add your image to Schoolbox and open the image through the resource browser. You will find the ID in the URL after send.php?id="
       },
       {
         key: "imageHeight",
         label: "Image Height",
-        description: "Enter the desired image height (px)."
+        description: "Enter the desired image height (px).",
+        help_text: "Specify the height in pixels, e.g. 300 for 300px."
       },
       {
         key: "imageWidth",
         label: "Image Width",
-        description: "Enter the desired image width (px)."
+        description: "Enter the desired image width (px).",
+        help_text: "Specify the width in pixels, e.g. 400 for 400px."
       }
     ]
   },
@@ -37,30 +40,34 @@ export const PastoralCare = [
       {
         key: "subtypeAlertPairs",
         label: "Subtype/Message Pairs",
-        description: "Add pairs of Subtype and the message to display."
+        description: "Add pairs of Subtype and the message to display.",
+        help_text: "Enter each Subtype and its corresponding message."
       }
     ]
   },
   {
     order: 4,
     name: "Action Checker",
-    description: "Validates required actions.",
+    description: "Links actions to Tags. To help refine the actions being taken. The message is a prompt to the user to ensure they are taking the correct action.",
     fileName: "actionChecker.js",
     options: [
       {
         key: "actions",
         label: "Actions",
-        description: "Enter the list of actions to check."
+        description: "Enter the list of actions to check.",
+        help_text: "List the actions you want to validate, separated by commas."
       },
       {
         key: "tagLists",
         label: "Tag Lists",
-        description: "Enter a comma-separated list of tags for each action."
+        description: "Enter a comma-separated list of tags for each action.",
+        help_text: "For each action, enter the tags separated by commas."
       },
       {
         key: "messages",
         label: "Messages",
-        description: "Enter the message to display for each action."
+        description: "Enter the message to display for each action.",
+        help_text: "Provide the message that will be shown to the user for each action."
       }
     ]
   },
@@ -73,20 +80,22 @@ export const PastoralCare = [
       {
         key: "subtypeSeverityPairs",
         label: "Subtype/Category Pairs",
-        description: "Add pairs of Subtype and Category."
+        description: "Add pairs of Subtype and Category.",
+        help_text: "Enter each Subtype and its corresponding Category."
       }
     ]
   },
   {
     order: 2,
     name: "Forced Confidential",
-    description: "Forces users to enter details in the confidential tab.",
+    description: "Forces users to enter details in the confidential tab. Please indicate the type that should trigger this behavior.",
     fileName: "forcedConfidential.js",
     options: [
       {
         key: "type",
         label: "Type",
-        description: "Enter the type for forced confidential."
+        description: "Enter the type for forced confidential.",
+        help_text: "Specify the type that should trigger forced confidential behavior."
       }
     ]
   },
