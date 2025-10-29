@@ -12,16 +12,60 @@ function toggleSection(section) {
 window.toggleSection = toggleSection; // Make it available globally for inline HTML handlers
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Tab switching logic: show/hide output areas and update active tab
+  const splitTabEl = document.getElementById('splitTab');
+  const combinedTabEl = document.getElementById('combinedTab');
+  if (splitTabEl && combinedTabEl) {
+    splitTabEl.addEventListener('click', () => {
+      setOutputMode('split');
+    });
+    combinedTabEl.addEventListener('click', () => {
+      setOutputMode('combined');
+    });
+  }
+// Tab switching function: only show relevant output area and update tab styling
+function setOutputMode(mode) {
+  const splitTabEl = document.getElementById('splitTab');
+  const combinedTabEl = document.getElementById('combinedTab');
+  if (splitTabEl && combinedTabEl) {
+    splitTabEl.classList.remove('active');
+    combinedTabEl.classList.remove('active');
+    if (mode === 'split') {
+      splitTabEl.classList.add('active');
+    } else {
+      combinedTabEl.classList.add('active');
+    }
+  }
+  const splitArea = document.getElementById('splitOutputArea');
+  const combinedArea = document.getElementById('combinedOutputArea');
+  if (splitArea) splitArea.style.display = mode === 'split' ? '' : 'none';
+  if (combinedArea) combinedArea.style.display = mode === 'combined' ? '' : 'none';
+}
   ['PastoralCare', 'Emailing', 'News'].forEach(section => {
     const checkbox = document.getElementById(section);
     if (checkbox) {
-      checkbox.addEventListener('change', () => toggleSection(section));
+      checkbox.addEventListener('change', () => {
+        toggleSection(section);
+        if (typeof updateSwitchLabel === 'function') {
+          updateSwitchLabel(section);
+        }
+      });
       // Set initial state
       toggleSection(section);
+      if (typeof updateSwitchLabel === 'function') {
+        updateSwitchLabel(section);
+      }
     }
   });
 
-  document.querySelector('button[onclick="generateCode()"]').addEventListener('click', generateCode);
+  const generateBtn = document.querySelector('button.generate-btn');
+  if (generateBtn) {
+    generateBtn.addEventListener('click', () => {
+      if (typeof window.combineRelevantFiles === 'function') {
+        window.combineRelevantFiles();
+      }
+    });
+  }
   document.querySelector('button[onclick="copyCode()"]').addEventListener('click', copyCode);
   document.querySelector('button[onclick="downloadCode()"]').addEventListener('click', downloadCode);
 
@@ -256,17 +300,7 @@ const modules = ${JSON.stringify(modules, null, 2)};
   // Show the generated code in the output textareas
   document.getElementById('output').value = loaderCode;
   document.getElementById('functionsOutput').value = functionsCode;
-  // Also update the combined output area directly so it's current immediately
-  try {
-    const combinedEl = document.getElementById('combinedOutput');
-    if (combinedEl) {
-      const out = loaderCode || '';
-      const fn = functionsCode || '';
-      combinedEl.value = [out.trim(), fn.trim()].filter(Boolean).join('\n\n// ---- SPLIT ----\n\n');
-    }
-  } catch (e) {
-    // ignore any DOM errors
-  }
+  // Do NOT update the combined output area automatically
 }
 
 // Add these functions for the new box:

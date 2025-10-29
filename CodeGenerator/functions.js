@@ -1,3 +1,32 @@
+// Combines relevant files into a single <script> block and previews in the combined output textarea
+window.combineRelevantFiles = async function combineRelevantFiles() {
+    // List your relevant files here (relative to the HTML file)
+    const files = [
+        'scripts/submitNotification.js',
+        'scripts/modal.js',
+        // Add more files as needed
+    ];
+
+    let combined = '<script>\n';
+    for (const file of files) {
+        try {
+            const resp = await fetch(file);
+            if (!resp.ok) throw new Error(`Failed to load ${file}`);
+            const content = await resp.text();
+            combined += `// ---- ${file} ----\n${content}\n\n`;
+        } catch (err) {
+            combined += `// ERROR: Could not load ${file}: ${err.message}\n\n`;
+        }
+    }
+
+    // Output to combinedOutput textarea for preview
+    combined += '</script>';
+    const previewBox = document.getElementById('combinedOutput');
+    if (previewBox) {
+        previewBox.value = combined;
+        previewBox.style.background = '';
+    }
+}
 const forcedConfidential_type = "Student Protection";
 const hoverEffect_imageID = "10690";
 const hoverEffect_imageHeight = "1080";

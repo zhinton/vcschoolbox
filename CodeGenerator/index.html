@@ -29,12 +29,13 @@
           <span style="font-size:1.08em; font-weight:500;">Pastoral Care</span>
           <div style="display: flex; align-items: center; gap: 12px; position: relative;">
             <label class="switch" style="position: relative;">
-              <input type="checkbox" id="PastoralCare" onchange="toggleSection('PastoralCare'); updateSwitchLabel('PastoralCare')">
+              <input type="checkbox" id="PastoralCare">
               <span class="slider"></span>
               <span class="switch-labels">
                 <span class="switch-off">Off</span>
                 <span class="switch-on">On</span>
               </span>
+             <span id="PastoralCareLabel" style="margin-left:8px; font-weight:600;"></span>
             </label>
           </div>
         </div>
@@ -42,12 +43,13 @@
           <span style="font-size:1.08em; font-weight:500;">Emailing</span>
           <div style="display: flex; align-items: center; gap: 12px; position: relative;">
             <label class="switch" style="position: relative;">
-              <input type="checkbox" id="Emailing" onchange="toggleSection('Emailing'); updateSwitchLabel('Emailing')">
+              <input type="checkbox" id="Emailing">
               <span class="slider"></span>
               <span class="switch-labels">
                 <span class="switch-on">On</span>
                 <span class="switch-off">Off</span>
               </span>
+             <span id="EmailingLabel" style="margin-left:8px; font-weight:600;"></span>
             </label>
           </div>
         </div>
@@ -55,12 +57,13 @@
           <span style="font-size:1.08em; font-weight:500;">News</span>
           <div style="display: flex; align-items: center; gap: 12px; position: relative;">
             <label class="switch" style="position: relative;">
-              <input type="checkbox" id="News" onchange="toggleSection('News'); updateSwitchLabel('News')">
+              <input type="checkbox" id="News">
               <span class="slider"></span>
               <span class="switch-labels">
                 <span class="switch-on">On</span>
                 <span class="switch-off">Off</span>
               </span>
+             <span id="NewsLabel" style="margin-left:8px; font-weight:600;"></span>
             </label>
           </div>
         </div>
@@ -105,8 +108,8 @@
   <!-- Option to combine into one file or keep split files (switch) -->
   <div style="margin-bottom: 8px; display:flex; align-items:center; gap:12px;">
     <div class="tab-container" style="display: flex; width: 100%; margin-bottom: 16px;">
-      <button id="splitTab" class="tab active" style="flex: 1; padding: 12px; font-size: 1.1em; border: none; background: #e0e0e0; cursor: pointer;">Split Output</button>
-      <button id="combinedTab" class="tab" style="flex: 1; padding: 12px; font-size: 1.1em; border: none; background: #f5f5f5; cursor: pointer;">Combined Output</button>
+      <button id="combinedTab" class="tab active" style="flex: 1; padding: 12px; font-size: 1.1em; border: none; background: #e0e0e0; cursor: pointer;">Combined Output</button>
+      <button id="splitTab" class="tab" style="flex: 1; padding: 12px; font-size: 1.1em; border: none; background: #f5f5f5; cursor: pointer;">Split Output</button>
     </div>
   </div>
   <style>
@@ -198,13 +201,14 @@
     });
   </script>
 
-  <div id="splitOutputArea">
+  <div id="splitOutputArea" style="display:none;">
     <div style="width:100%; margin-bottom:8px;">
       <div style="display:flex; gap:12px; align-items:center;">
         <label for="JavaScriptURL" style="min-width:140px;">JavaScript URL:</label>
         <input type="text" id="JavaScriptURL" style="flex:1;" />
       </div>
       <div style="font-size:0.9em; color:#666; margin-top:6px;">This is the base URL where your hosted <code>functions.js</code> will live (for example: <code>https://yourdomain.com/js/</code>). The generator will append <code>functions.js</code> automatically.</div>
+      <div style="font-size:0.95em; color:#B00020; margin-top:4px; font-weight:500;">Note: After changing the JavaScript URL, click <b>Generate Code</b> to update your outputs.</div>
     </div>
     <div id="outputsColumns" style="display:flex; gap: 24px; align-items: flex-start; width:100%;">
       <!-- Loader.js box -->
@@ -236,7 +240,7 @@
       <button id="restoreAllBtn" onclick="restoreAllConfig()">Restore All Settings</button>
     </div>
   </div>
-  <div id="combinedOutputArea" style="display:none; width:100%; margin-top:8px;">
+  <div id="combinedOutputArea" style="display:block; width:100%; margin-top:8px;">
     <div style="flex: 1;">
       <h3>Schoolbox Code (combined)</h3>
       <textarea id="combinedOutput" rows="24" cols="160" readonly></textarea>
@@ -253,7 +257,12 @@
   </div>
   
 
+<script src="functions.js"></script>
 <script type="module" src="script.js"></script>
+<script>
+// Add placeholder to combinedOutput textarea on page load for debug
+// ...existing code...
+</script>
 <script>
 function updateColorPreview() {
   const acceptColor = document.getElementById('acceptColor').value.trim();
@@ -279,23 +288,43 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
   // ...existing code...
 
   // Build combined content from the two generated textareas
-  function updateCombinedOutput() {
-    const out = document.getElementById('output')?.value || '';
-    const fn = document.getElementById('functionsOutput')?.value || '';
-    const combined = [out.trim(), fn.trim()].filter(Boolean).join('\n\n// ---- SPLIT ----\n\n');
-    document.getElementById('combinedOutput').value = combined;
-  }
+  // function updateCombinedOutput() {
+  //   const out = document.getElementById('output')?.value || '';
+  //   const fn = document.getElementById('functionsOutput')?.value || '';
+  //   const combined = [out.trim(), fn.trim()].filter(Boolean).join('\n\n// ---- SPLIT ----\n\n');
+  //   document.getElementById('combinedOutput').value = combined;
+  // }
 
   // Wire up copy/download for combined
   document.addEventListener('DOMContentLoaded', () => {
+    // Tab switching logic: Combined is default
+    const combinedTab = document.getElementById('combinedTab');
+    const splitTab = document.getElementById('splitTab');
+    const combinedArea = document.getElementById('combinedOutputArea');
+    const splitArea = document.getElementById('splitOutputArea');
+    combinedTab.addEventListener('click', () => {
+      combinedTab.classList.add('active');
+      splitTab.classList.remove('active');
+      combinedTab.style.background = '#e0e0e0';
+      splitTab.style.background = '#f5f5f5';
+      combinedArea.style.display = 'block';
+      splitArea.style.display = 'none';
+    });
+    splitTab.addEventListener('click', () => {
+      splitTab.classList.add('active');
+      combinedTab.classList.remove('active');
+      splitTab.style.background = '#e0e0e0';
+      combinedTab.style.background = '#f5f5f5';
+      splitArea.style.display = 'block';
+      combinedArea.style.display = 'none';
+    });
+    // Copy/download for combined
     const copyBtn = document.getElementById('copyCombinedBtn');
     const dlBtn = document.getElementById('downloadCombinedBtn');
     if (copyBtn) copyBtn.addEventListener('click', () => {
-      updateCombinedOutput();
       navigator.clipboard.writeText(document.getElementById('combinedOutput').value);
     });
     if (dlBtn) dlBtn.addEventListener('click', () => {
-      updateCombinedOutput();
       const text = document.getElementById('combinedOutput').value;
       const blob = new Blob([text], { type: 'text/javascript' });
       const url = URL.createObjectURL(blob);
@@ -307,36 +336,12 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
       URL.revokeObjectURL(url);
       a.remove();
     });
-
-    // Keep combined in sync when underlying outputs change
-    const outTA = document.getElementById('output');
-    const fnTA = document.getElementById('functionsOutput');
-    [outTA, fnTA].forEach(ta => {
-      if (ta) ta.addEventListener('input', () => {
-        if (document.getElementById('outputModeSwitch').checked) updateCombinedOutput();
-      });
-    });
   });
 
   // Restore combined content by splitting into loader and functions parts
-  function restoreCombinedConfig() {
-    const combined = document.getElementById('restoreCombinedInput')?.value || document.getElementById('combinedOutput')?.value || '';
-    if (!combined.trim()) return alert('No combined code provided');
-    // Ensure UI is in combined mode
-    const switchEl = document.getElementById('outputModeSwitch');
-    if (switchEl && !switchEl.checked) { switchEl.checked = true; toggleOutputMode(); }
-    // Split using the marker we used when combining
-    const parts = combined.split('\n\n// ---- SPLIT ----\n\n');
-    const loaderPart = parts[0] || '';
-    const functionsPart = parts.slice(1).join('\n\n// ---- SPLIT ----\n\n') || '';
-    // Put into restore textareas and call existing restore functions
-    if (loaderPart) document.getElementById('restoreInput').value = loaderPart;
-    if (functionsPart) document.getElementById('restoreFunctionsInput').value = functionsPart;
-    // Call the restore routines
-    try { restoreAllConfig(); } catch (e) { console.warn('restoreAllConfig failed', e); }
-    try { restoreFunctionsConfig(); } catch (e) { console.warn('restoreFunctionsConfig failed', e); }
-    alert('Restore attempted. Check UI for updated settings.');
-  }
+  // function restoreCombinedConfig() {
+  //   // Disabled automatic population of combined output
+  // }
 </script>
 </body>
 </html>
