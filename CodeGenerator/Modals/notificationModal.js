@@ -1,13 +1,17 @@
-// Get tab bar color from computed styles
-const tabBarElement = document.querySelector('.tab-bar');
-const tabBarColor = tabBarElement ? getComputedStyle(tabBarElement).backgroundColor : null;
+// modal.js - Generic modal used across the generator
+// Provides `showModal(message, buttons)` and `closeModal()`
+
+// Get tab bar color from computed styles (guarded).
+// Use a `var` and cache on `window` to avoid redeclaration if the script
+// is loaded more than once which would throw for `const`.
+var tabBarElement = (window.__cg_tabBarElement !== undefined) ? window.__cg_tabBarElement : document.querySelector('.tab-bar');
+window.__cg_tabBarElement = tabBarElement;
+var tabBarColor = tabBarElement ? getComputedStyle(tabBarElement).backgroundColor : null;
 
 // If acceptColor or rejectColor is blank or falsy, use tabBarColor
-window.acceptColor = acceptColor && acceptColor.trim() ? acceptColor : tabBarColor;
-window.rejectColor = rejectColor && rejectColor.trim() ? rejectColor : tabBarColor;
+window.acceptColor = (typeof acceptColor !== 'undefined' && acceptColor && acceptColor.trim()) ? acceptColor : tabBarColor;
+window.rejectColor = (typeof rejectColor !== 'undefined' && rejectColor && rejectColor.trim()) ? rejectColor : tabBarColor;
 
-// This is the notification popup code used by other scripts
-// Function to create and show a modal dialog with customizable buttons
 function showModal(message, buttons) {
     var modal = document.createElement('div');
     modal.id = 'myModal';
@@ -80,5 +84,5 @@ function closeModal() {
     }
 }
 
-window.acceptColor = acceptColor;
-window.rejectColor = rejectColor;
+window.showModal = showModal;
+window.closeModal = closeModal;

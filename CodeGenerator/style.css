@@ -1,3 +1,32 @@
+/* Page heading for FormsGenerator */
+.forms-generator .page-heading {
+  background: #0066B0;
+  color: #fff;
+  padding: 16px 20px; /* give some vertical and horizontal padding */
+  margin: 0; /* no margin */
+  text-align: center;
+}
+.forms-generator .page-title {
+  margin: 0;
+  padding: 0;
+  font-size: 2.2em;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+}
+
+/* Disclaimer styling for Forms Generator */
+.forms-generator .disclaimer {
+  background: #F8D7DA;
+  color: #721c24;
+  border: 1px solid #F5C6CB;
+  font-size: 1.08em;
+  text-align: center;
+  font-weight: 500;
+  width: 100%;
+  padding: 14px 28px;
+  margin: 0 0 0 0;
+}
 body {
   font-family: Arial, sans-serif;
   padding: 20px;
@@ -113,4 +142,150 @@ textarea {
   line-height: 1;
   padding: 0;
   margin-left: 2px;
+}
+
+/* Dynamic function list styling (used by index.html loaders) */
+.dyn-entry { border-bottom: 1px solid #eee; padding: 10px 0; }
+.dyn-header { display:flex; align-items:center; justify-content:space-between; }
+.dyn-left { display:flex; flex-direction:column; }
+.dyn-label { font-weight:700; }
+.dyn-desc { font-size:0.95em; color:#555; }
+.dyn-left-wrap { display:flex; align-items:center; gap:12px; }
+.dyn-toggle { width:18px; height:18px; cursor:pointer; }
+.dyn-btns { display:flex; gap:8px; }
+.dyn-details { margin:10px 40px 0 40px; display:none; padding:8px 12px; background:#fbfbfb; border:1px solid #f0f0f0; border-radius:6px; box-sizing:border-box; width: calc(100% - 80px); align-self: stretch; }
+.dyn-row { margin-bottom:8px; }
+.dyn-lab { display:block; font-weight:600; }
+.rows-container { display:flex; flex-direction:column; gap:6px; width:100%; padding-left:12px; }
+.rows-wrap { display:flex; flex-direction:column; gap:6px; padding-left:0; padding-right:10px; }
+.row-item { display:flex; gap:8px; align-items:center; }
+.row-item input { flex:1; }
+.row-remove, .row-add { width:32px; height:32px; border-radius:6px; border:1px solid #d0d7de; background:#fff; cursor:pointer; }
+.row-remove { width:28px; height:28px; border-radius:4px; }
+.row-headers { display:flex; gap:8px; align-items:center; margin-bottom:6px; padding-left:0; flex-wrap:nowrap; }
+.row-header-cell { font-weight:600; color:#333; flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.row-header-action { flex: 0 0 36px; }
+.dyn-textarea { width:100%; box-sizing:border-box; }
+.dyn-tip { font-size:0.9em; color:#666; margin-top:6px; }
+.subtype-item { padding:6px 8px; background:#fff; border:1px solid #e6e6e6; border-radius:6px; margin-bottom:6px; }
+
+/* Options container for each function entry */
+.dyn-options { padding: 10px 12px; background: #fbfbfb; border: 1px solid #f0f0f0; border-radius: 6px; margin-top: 10px; }
+
+/* Wrapper for the add button under rows editor */
+.rows-add-wrap { display:flex; justify-content:flex-start; margin-top:6px; }
+
+/* Styles moved from FormsGenerator.html */
+/* Forms Generator specific layout and controls */
+body.forms-generator {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f0f0f0;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  min-width: 100vw;
+  display: flex;
+  justify-content: center;
+}
+#builder {
+  background: #fff;
+  padding: 32px 32px 24px 32px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  width: 100%;
+  margin: 0;
+}
+h1.forms-generator {
+  text-align: center;
+  font-size: 2.2em;
+  font-weight: 600;
+  margin-bottom: 28px;
+  color: #222;
+}
+.field-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.field-row input, .field-row select {
+  font-size: 1em;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  background: #f8fafc;
+  outline: none;
+  transition: border 0.2s;
+}
+.field-row input:focus, .field-row select:focus {
+  border: 1.5px solid #4f8cff;
+}
+.field-row label {
+  min-width: 90px;
+  font-weight: 500;
+  color: #444;
+}
+#fieldsList {
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+.field-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 7px 10px;
+  margin-bottom: 7px;
+  font-size: 1em;
+  flex-wrap: wrap;
+}
+.field-list-row span {
+  word-break: break-word;
+  white-space: pre-line;
+  max-width: 420px;
+  display: inline-block;
+  vertical-align: top;
+}
+.field-list-row label { font-weight: 600; color: #4f8cff; }
+.icon-btn { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; padding:6px; border-radius:6px; border:none; cursor:pointer; background:#e5e7eb; color:#222; }
+.icon-btn:hover { filter:brightness(0.95); }
+.icon-trash { background:#ef4444; color:#fff; }
+.icon-trash:hover { background:#dc2626; }
+.icon-edit { background:#fff; color:#0b72d9; border:1px solid #d0d7de; }
+#generateFormBtn { background: #4f8cff; color: #fff; border: none; border-radius: 6px; padding: 8px 18px; font-size: 1em; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+#generateFormBtn:hover { background: #2563eb; }
+#output { width: 100%; height: 180px; margin-top: 18px; border-radius: 8px; border: 1.5px solid #d0d7de; background: #f8fafc; font-size: 1em; padding: 12px; color: #222; resize: vertical; }
+.field-type { width: 120px; }
+.field-options { width: 180px; }
+.field-options { font-size: 1em; padding: 7px 10px; border-radius: 6px; border: 1px solid #d0d7de; background: #f8fafc; outline: none; transition: border 0.2s; }
+.field-options:focus { border: 1.5px solid #4f8cff; background: #fff; }
+.field-options.multiline { display:block; width:100%; min-height:72px; margin-top:8px; padding:8px 10px; box-sizing:border-box; resize:vertical; }
+#addFieldBtn { background: #10b981; color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 1em; cursor: pointer; transition: background 0.2s; }
+#addFieldBtn:hover { background: #059669; }
+#sidebar { width: 260px; background: #fff; border-radius: 0 0 12px 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); padding: 18px 14px 14px 14px; z-index: 10; min-height: 180px; max-width: 90vw; margin-left: 0; }
+#sidebar h3 { margin-top: 0; font-size: 1.18em; font-weight: 600; color: #222; margin-bottom: 12px; }
+.template-btn { display: block; width: 100%; margin-bottom: 10px; background: #f3f4f6; color: #222; border: 1.5px solid #d0d7de; border-radius: 6px; padding: 9px 10px; font-size: 1em; text-align: left; cursor: pointer; transition: background 0.18s, border 0.18s; }
+.template-btn:hover { background: #e0e7ef; border-color: #4f8cff; }
+@media (max-width: 1100px) { #sidebar { width: 100%; margin: 24px 0 0 0; box-shadow: none; } }
+.builder-sidebar-wrap { display: flex; gap: 20px; align-items: flex-start; width: 100%; margin: 0; }
+@media (max-width: 800px) {
+  .builder-sidebar-wrap { flex-direction: column; }
+  #builder { width: 100%; box-shadow: none; padding: 20px; }
+  #sidebar { width: 100%; margin-top: 16px; }
+  .field-row label { min-width: 64px; }
+  .field-list-row { padding: 8px; }
+  .field-list-row span { max-width: calc(100% - 160px); }
+}
+
+/* Modal submit button: use Schoolbox navigation background variable and override inline styles */
+.form-modal button[type="submit"] {
+  background: var(--navigation-background, #4f8cff) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 8px 18px !important;
+  font-size: 1em !important;
+  cursor: pointer !important;
 }

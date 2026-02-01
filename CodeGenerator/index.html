@@ -98,9 +98,7 @@
         </div>
       </div>
     </fieldset>
-    <div style="display:flex; justify-content:center; margin:24px 0;">
-      <button type="button" onclick="generateCode()" class="generate-btn">Generate Code</button>
-    </div>
+    <!-- Generate button moved into output panes -->
     <fieldset id="SubtypeAlertPairsSection" class="function-section" style="margin-top:24px;">
       <legend>Subtype Alert Pairs</legend>
       <div class="function-entry">
@@ -221,6 +219,9 @@
       </div>
       <div style="font-size:0.9em; color:#666; margin-top:6px;">This is the base URL where your hosted <code>functions.js</code> will live (for example: <code>https://yourdomain.com/js/</code>). The generator will append <code>functions.js</code> automatically.</div>
       <div style="font-size:0.95em; color:#B00020; margin-top:4px; font-weight:500;">Note: After changing the JavaScript URL, click <b>Generate Code</b> to update your outputs.</div>
+      <div style="display:flex; justify-content:flex-start; margin:12px 0;">
+        <button id="generateSplitBtn" type="button" class="generate-btn">Generate Code</button>
+      </div>
     </div>
     <div id="outputsColumns" style="display:flex; gap: 24px; align-items: flex-start; width:100%;">
       <!-- Loader.js box -->
@@ -255,6 +256,9 @@
   <div id="combinedOutputArea" style="display:block; width:100%; margin-top:8px;">
     <div style="flex: 1;">
       <h3>Schoolbox Code (combined)</h3>
+      <div style="display:flex; justify-content:flex-start; margin:8px 0;">
+        <button id="generateCombinedBtn" type="button" class="generate-btn">Generate Code</button>
+      </div>
       <textarea id="combinedOutput" rows="24" cols="160" readonly></textarea>
       <br>
       <button id="copyCombinedBtn">Copy to Clipboard</button>
@@ -269,8 +273,8 @@
   </div>
   
 
-<script src="functions.js"></script>
-<script type="module" src="script.js"></script>
+<script src="scripts/functions.js"></script>
+<script type="module" src="scripts/script.js"></script>
 <script>
 // Add placeholder to combinedOutput textarea on page load for debug
 // ...existing code...
@@ -319,6 +323,8 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
     // Copy/download for combined
     const copyBtn = document.getElementById('copyCombinedBtn');
     const dlBtn = document.getElementById('downloadCombinedBtn');
+    const genCombinedBtn = document.getElementById('generateCombinedBtn');
+    const genSplitBtn = document.getElementById('generateSplitBtn');
     if (copyBtn) copyBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(document.getElementById('combinedOutput').value);
     });
@@ -334,9 +340,755 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
       URL.revokeObjectURL(url);
       a.remove();
     });
+    if (genCombinedBtn) genCombinedBtn.addEventListener('click', async () => {
+      if (typeof generateCombinedOutput === 'function') {
+        try { await generateCombinedOutput(); } catch (e) { console.error('generateCombinedOutput failed', e); }
+      } else {
+        console.warn('generateCombinedOutput not available yet.');
+      }
+    });
+    if (genSplitBtn) genSplitBtn.addEventListener('click', () => {
+      if (typeof generateCode === 'function') generateCode(); else console.warn('generateCode not available yet.');
+    });
   });
 
   // ...existing code...
+</script>
+<!-- Pastoral Care dynamic loader: builds function list from scripts/pastoralCare/ -->
+<script>
+  // extract an object literal named `objName` from JS text and parse it
+  function extractObjectFromJS(text, objName) {
+    const idx = text.indexOf(objName);
+    if (idx === -1) return null;
+    const after = text.slice(idx);
+    const eq = after.indexOf('=');
+    if (eq === -1) return null;
+    const rest = after.slice(eq + 1);
+    // find the first '{' and match braces
+    let braceStart = rest.indexOf('{');
+    if (braceStart === -1) return null;
+    let depth = 0;
+    for (let i = braceStart; i < rest.length; i++) {
+      if (rest[i] === '{') depth++;
+      else if (rest[i] === '}') {
+        depth--;
+        if (depth === 0) {
+          const objText = rest.slice(braceStart, i + 1);
+          // Try JSON parse first, then fall back to evaluating the JS object literal
+          try {
+            return JSON.parse(objText);
+          } catch (e) {
+            try {
+              // Evaluate the object literal safely in a function scope
+              /* eslint-disable no-new-func */
+              const evaluated = new Function('return ' + objText)();
+              return evaluated;
+            } catch (e2) {
+              return null;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  async function buildPastoralCareForIndex() {
+    const section = document.getElementById('PastoralCareSection');
+    if (!section) return;
+    section.innerHTML = '';
+    try {
+      const resp = await fetch('Functions/pastoralCare/');
+      if (!resp.ok) throw new Error('Failed to load Functions/pastoralCare/');
+      const text = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      const files = Array.from(doc.querySelectorAll('a'))
+        .map(a => a.getAttribute('href'))
+        .filter(h => h && h.endsWith('.js'));
+
+      if (files.length === 0) {
+        section.innerHTML = '<div style="color:#666;padding:8px;">No Pastoral Care scripts found.</div>';
+        return;
+      }
+
+      for (const file of files) {
+        const filePath = 'Functions/pastoralCare/' + file;
+        try {
+          const fileResp = await fetch(filePath);
+          if (!fileResp.ok) throw new Error('Failed to fetch ' + filePath);
+          const fileText = await fileResp.text();
+          let parsed = extractObjectFromJS(fileText, 'functionSchema');
+          if (!parsed) parsed = extractObjectFromJS(fileText, 'embedSchema');
+          if (!parsed) parsed = extractObjectFromJS(fileText, 'formSchema');
+          const title = (parsed && parsed.functionName) ? parsed.functionName : file.replace('.js','');
+
+          const entry = document.createElement('div');
+          entry.className = 'function-entry dyn-entry';
+
+          const header = document.createElement('div');
+          header.className = 'dyn-header';
+
+          const left = document.createElement('div');
+          left.className = 'dyn-left';
+          const label = document.createElement('div');
+          label.className = 'dyn-label';
+          label.textContent = title;
+          if (parsed && parsed.description) {
+            const desc = document.createElement('div');
+            desc.className = 'dyn-desc';
+            desc.textContent = parsed.description;
+            left.appendChild(label);
+            left.appendChild(desc);
+          } else {
+            left.appendChild(label);
+          }
+
+          const leftWrap = document.createElement('div');
+          leftWrap.className = 'dyn-left-wrap';
+
+          const toggle = document.createElement('input');
+          toggle.type = 'checkbox';
+          toggle.id = 'pcFn-' + title.replace(/\s+/g,'-');
+          // mark dynamic toggles as pastoral-care function checkboxes so generator picks them up
+          toggle.className = 'dyn-toggle pcFunction pastoralCare';
+          // store the source filename for mapping back when generating
+          toggle.dataset.file = file;
+          toggle.value = file.replace('.js','');
+          const checkboxId = `pcFunction-${file.replace('.js','')}`;
+          // place checkbox on the left of the title
+          leftWrap.appendChild(toggle);
+          leftWrap.appendChild(left);
+
+          const btns = document.createElement('div');
+          btns.className = 'dyn-btns';
+
+          header.appendChild(leftWrap);
+          header.appendChild(btns);
+
+          // expose the filename on the entry element as well
+          entry.dataset.file = file;
+          entry.appendChild(header);
+
+          const details = document.createElement('div');
+          details.className = 'dyn-details';
+          // initialize details visibility based on the checkbox state
+          details.style.display = toggle.checked ? 'block' : 'none';
+          // initialize details visibility based on the checkbox state
+          details.style.display = toggle.checked ? 'block' : 'none';
+          // initialize details visibility based on the checkbox state
+          details.style.display = toggle.checked ? 'block' : 'none';
+
+          if (parsed && Array.isArray(parsed.fields)) {
+            // If the file provides example values at top-level `options`, propagate
+            // them into any `rows` field that doesn't already have `options` so
+            // the dynamic row editor shows examples (e.g., subtypeSeverity/options).
+            try {
+              if (Array.isArray(parsed.options) && parsed.options.length) {
+                for (const pf of parsed.fields) {
+                  if ((pf.type === 'rows' || pf.type === 'pairs') && (!Array.isArray(pf.options) || pf.options.length === 0)) {
+                    pf.options = parsed.options.slice();
+                  }
+                }
+              }
+            } catch (e) { /* ignore when running in non-browser parse fallback */ }
+            for (const f of parsed.fields) {
+              if (f.hidden) continue;
+              const row = document.createElement('div');
+              row.className = 'dyn-row';
+              const lab = document.createElement('label');
+              lab.className = 'dyn-lab';
+              lab.textContent = f.label || f.name;
+              row.appendChild(lab);
+              if (f.type === 'rows' || f.type === 'triples' || (f.placeholders && f.placeholders.length > 1)) {
+                // Generic multi-column row editor driven by `placeholders` length (or fallback to 2/3)
+                const cols = (f.placeholders && f.placeholders.length) ? f.placeholders.length : (f.type === 'triples' ? 3 : 2);
+                const container = document.createElement('div');
+                container.className = 'rows-container';
+
+                const rowsWrap = document.createElement('div');
+                rowsWrap.className = 'rows-wrap';
+                if (f.placeholders && f.placeholders.length && !container.querySelector('.row-headers')) {
+                  const headers = document.createElement('div');
+                  headers.className = 'row-headers';
+                  for (let hi = 0; hi < f.placeholders.length; hi++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'row-header-cell';
+                    cell.textContent = f.placeholders[hi];
+                    headers.appendChild(cell);
+                  }
+                  const actionCell = document.createElement('div');
+                  actionCell.className = 'row-header-action';
+                  headers.appendChild(actionCell);
+                  container.appendChild(headers);
+                }
+                if (f.placeholders && f.placeholders.length && !container.querySelector('.row-headers')) {
+                  const headers = document.createElement('div');
+                  headers.className = 'row-headers';
+                  for (let hi = 0; hi < f.placeholders.length; hi++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'row-header-cell';
+                    cell.textContent = f.placeholders[hi];
+                    headers.appendChild(cell);
+                  }
+                  const actionCell = document.createElement('div');
+                  actionCell.className = 'row-header-action';
+                  headers.appendChild(actionCell);
+                  container.appendChild(headers);
+                }
+                // if placeholders are provided, render them as column headers
+                if (f.placeholders && f.placeholders.length && !container.querySelector('.row-headers')) {
+                  const headers = document.createElement('div');
+                  headers.className = 'row-headers';
+                  for (let hi = 0; hi < f.placeholders.length; hi++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'row-header-cell';
+                    cell.textContent = f.placeholders[hi];
+                    headers.appendChild(cell);
+                  }
+                  // action column header (aligns with remove/add buttons)
+                  const actionCell = document.createElement('div');
+                  actionCell.className = 'row-header-action';
+                  headers.appendChild(actionCell);
+                  container.appendChild(headers);
+                }
+
+                const makeRow = (parts) => {
+                  const r = document.createElement('div');
+                  r.className = 'row-item';
+                  for (let ci = 0; ci < cols; ci++) {
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.placeholder = (f.placeholders && f.placeholders[ci]) || (ci === 0 ? 'Type' : (ci === 1 ? 'Subtype' : 'Value'));
+                    inp.className = 'row-input';
+                    inp.value = parts[ci] || '';
+                    r.appendChild(inp);
+                  }
+                  const removeBtn = document.createElement('button');
+                  removeBtn.type = 'button';
+                  removeBtn.textContent = '−';
+                  removeBtn.title = 'Remove';
+                  removeBtn.className = 'row-remove';
+                  removeBtn.addEventListener('click', () => {
+                    rowsWrap.removeChild(r);
+                  });
+                  r.appendChild(removeBtn);
+                  return r;
+                };
+
+                const lines = (f.options && f.options.length) ? f.options.slice() : [];
+                if (lines.length === 0) lines.push('');
+                lines.forEach(line => {
+                  const parts = line.split('|').map(s => s.trim());
+                  // ensure parts length
+                  while (parts.length < cols) parts.push('');
+                  rowsWrap.appendChild(makeRow(parts));
+                });
+
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.textContent = '+';
+                addBtn.title = 'Add';
+                addBtn.className = 'row-add';
+                addBtn.addEventListener('click', () => {
+                  rowsWrap.appendChild(makeRow(Array(cols).fill('')));
+                });
+
+                container.appendChild(rowsWrap);
+                const addWrap = document.createElement('div');
+                addWrap.style.display = 'flex';
+                addWrap.style.justifyContent = 'flex-start';
+                addWrap.appendChild(addBtn);
+                container.appendChild(addWrap);
+                row.appendChild(container);
+              } else if (Array.isArray(f.options) && f.options.length > 0) {
+                const ta = document.createElement('textarea');
+                ta.rows = 3;
+                ta.style.width = '100%';
+                ta.value = f.options.join('\n');
+                ta.title = f.tips || '';
+                ta.placeholder = f.placeholder || f.tips || '';
+                ta.id = `${checkboxId}-${f.name}`;
+                row.appendChild(ta);
+              } else if (f.type === 'pairs' || f.type === 'rows' || f.type === 'multiline') {
+                const ta = document.createElement('textarea');
+                ta.rows = 4;
+                ta.style.width = '100%';
+                ta.value = (f.options && f.options.join('\n')) || '';
+                ta.title = f.tips || '';
+                ta.placeholder = f.placeholder || f.tips || '';
+                ta.id = `${checkboxId}-${f.name}`;
+                row.appendChild(ta);
+              } else {
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.style.width = '100%';
+                inp.value = f.default || '';
+                inp.title = f.tips || '';
+                inp.placeholder = f.placeholder || '';
+                inp.id = `${checkboxId}-${f.name}`;
+                row.appendChild(inp);
+              }
+              if (f.tips) {
+                const tip = document.createElement('div');
+                tip.style.fontSize = '0.9em';
+                tip.style.color = '#666';
+                tip.style.marginTop = '6px';
+                tip.textContent = f.tips;
+                row.appendChild(tip);
+              }
+              details.appendChild(row);
+            }
+          } else {
+            const note = document.createElement('div');
+            note.style.color = '#666';
+            note.textContent = 'No fields declared in schema.';
+            details.appendChild(note);
+          }
+
+          // special wiring: if schema contains subtypeAlertPairs, populate the Subtype Alert Pairs area
+          // (details are shown when the checkbox is enabled)
+          if (parsed && Array.isArray(parsed.fields)) {
+            const pairField = parsed.fields.find(x => x.name === 'subtypeAlertPairs' || x.name.toLowerCase().includes('subtype'));
+            if (pairField) {
+              const subtypeContainer = document.querySelector('#pcFunction-subtypeAlertPairs .hover-options-row');
+              if (subtypeContainer) {
+                subtypeContainer.innerHTML = '';
+                const values = (pairField.options && pairField.options.length) ? pairField.options : [];
+                values.forEach(v => {
+                  const div = document.createElement('div');
+                  div.textContent = v;
+                  div.style.padding = '6px 8px';
+                  div.style.background = '#fff';
+                  div.style.border = '1px solid #e6e6e6';
+                  div.style.borderRadius = '6px';
+                  div.style.marginBottom = '6px';
+                  subtypeContainer.appendChild(div);
+                });
+              }
+            }
+          }
+
+          // checkbox toggles visibility of the configure/details area
+          toggle.addEventListener('change', () => {
+            details.style.display = toggle.checked ? 'block' : 'none';
+          });
+
+          entry.appendChild(details);
+          section.appendChild(entry);
+
+        } catch (e) {
+          console.error('Failed to load pastoral file', filePath, e);
+        }
+      }
+
+    } catch (e) {
+      section.innerHTML = '<div style="color:#b00020;padding:8px;">Could not load pastoral care list: ' + e.message + '</div>';
+    }
+  }
+</script>
+<script>
+  window.addEventListener('DOMContentLoaded', buildNewsForIndex);
+
+  async function buildNewsForIndex() {
+    const section = document.getElementById('NewsSection');
+    if (!section) return;
+    section.innerHTML = '';
+    try {
+      const resp = await fetch('Functions/news/');
+      if (!resp.ok) throw new Error('Failed to load Functions/news/');
+      const text = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      const files = Array.from(doc.querySelectorAll('a'))
+        .map(a => a.getAttribute('href'))
+        .filter(h => h && h.endsWith('.js'));
+
+      if (files.length === 0) {
+        section.innerHTML = '<div style="color:#666;padding:8px;">No News scripts found.</div>';
+        return;
+      }
+
+      for (const file of files) {
+        const filePath = 'Functions/news/' + file;
+        try {
+          const fileResp = await fetch(filePath);
+          if (!fileResp.ok) throw new Error('Failed to fetch ' + filePath);
+          const fileText = await fileResp.text();
+          let parsed = extractObjectFromJS(fileText, 'functionSchema');
+          if (!parsed) parsed = extractObjectFromJS(fileText, 'embedSchema');
+          if (!parsed) parsed = extractObjectFromJS(fileText, 'formSchema');
+          const title = (parsed && parsed.functionName) ? parsed.functionName : file.replace('.js','');
+
+          const entry = document.createElement('div');
+          entry.className = 'function-entry dyn-entry';
+
+          const header = document.createElement('div');
+          header.className = 'dyn-header';
+
+          const left = document.createElement('div');
+          left.className = 'dyn-left';
+          const label = document.createElement('div');
+          label.className = 'dyn-label';
+          label.textContent = title;
+          if (parsed && parsed.description) {
+            const desc = document.createElement('div');
+            desc.className = 'dyn-desc';
+            desc.textContent = parsed.description;
+            left.appendChild(label);
+            left.appendChild(desc);
+          } else {
+            left.appendChild(label);
+          }
+
+          const leftWrap = document.createElement('div');
+          leftWrap.className = 'dyn-left-wrap';
+
+          const toggle = document.createElement('input');
+          toggle.type = 'checkbox';
+          toggle.id = 'newsFn-' + title.replace(/\s+/g,'-');
+          toggle.className = 'dyn-toggle newsFunction news';
+          toggle.dataset.file = file;
+          toggle.value = file.replace('.js','');
+          leftWrap.appendChild(toggle);
+          leftWrap.appendChild(left);
+
+          const btns = document.createElement('div');
+          btns.className = 'dyn-btns';
+
+          header.appendChild(leftWrap);
+          header.appendChild(btns);
+
+          entry.appendChild(header);
+
+          const details = document.createElement('div');
+          details.className = 'dyn-details';
+
+          if (parsed && Array.isArray(parsed.fields)) {
+            for (const f of parsed.fields) {
+              if (f.hidden) continue;
+              const row = document.createElement('div');
+              row.className = 'dyn-row';
+              const lab = document.createElement('label');
+              lab.className = 'dyn-lab';
+              lab.textContent = f.label || f.name;
+              row.appendChild(lab);
+              if (f.type === 'rows' || f.type === 'triples' || (f.placeholders && f.placeholders.length > 1)) {
+                // reuse multi-column editor logic
+                const cols = (f.placeholders && f.placeholders.length) ? f.placeholders.length : (f.type === 'triples' ? 3 : 2);
+                const container = document.createElement('div');
+                container.className = 'rows-container';
+
+                const rowsWrap = document.createElement('div');
+                rowsWrap.className = 'rows-wrap';
+
+                const makeRow = (parts) => {
+                  const r = document.createElement('div');
+                  r.className = 'row-item';
+                  for (let ci = 0; ci < cols; ci++) {
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.placeholder = (f.placeholders && f.placeholders[ci]) || (ci === 0 ? 'Type' : (ci === 1 ? 'Subtype' : 'Value'));
+                    inp.className = 'row-input';
+                    inp.value = parts[ci] || '';
+                    r.appendChild(inp);
+                  }
+                  const removeBtn = document.createElement('button');
+                  removeBtn.type = 'button';
+                  removeBtn.textContent = '−';
+                  removeBtn.title = 'Remove';
+                  removeBtn.className = 'row-remove';
+                  removeBtn.addEventListener('click', () => {
+                    rowsWrap.removeChild(r);
+                  });
+                  r.appendChild(removeBtn);
+                  return r;
+                };
+
+                const lines = (f.options && f.options.length) ? f.options.slice() : [];
+                if (lines.length === 0) lines.push('');
+                lines.forEach(line => {
+                  const parts = line.split('|').map(s => s.trim());
+                  while (parts.length < cols) parts.push('');
+                  rowsWrap.appendChild(makeRow(parts));
+                });
+
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.textContent = '+';
+                addBtn.title = 'Add';
+                addBtn.className = 'row-add';
+                addBtn.addEventListener('click', () => {
+                  rowsWrap.appendChild(makeRow(Array(cols).fill('')));
+                });
+
+                container.appendChild(rowsWrap);
+                const addWrap = document.createElement('div');
+                addWrap.style.display = 'flex';
+                addWrap.style.justifyContent = 'flex-start';
+                addWrap.appendChild(addBtn);
+                container.appendChild(addWrap);
+                row.appendChild(container);
+              } else if (Array.isArray(f.options) && f.options.length > 0) {
+                const ta = document.createElement('textarea');
+                ta.rows = 3;
+                ta.style.width = '100%';
+                ta.value = f.options.join('\n');
+                ta.title = f.tips || '';
+                ta.placeholder = f.placeholder || f.tips || '';
+                row.appendChild(ta);
+              } else if (f.type === 'pairs' || f.type === 'rows' || f.type === 'multiline') {
+                const ta = document.createElement('textarea');
+                ta.rows = 4;
+                ta.style.width = '100%';
+                ta.value = (f.options && f.options.join('\n')) || '';
+                ta.title = f.tips || '';
+                ta.placeholder = f.placeholder || f.tips || '';
+                row.appendChild(ta);
+              } else {
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.style.width = '100%';
+                inp.value = f.default || '';
+                inp.title = f.tips || '';
+                inp.placeholder = f.placeholder || '';
+                row.appendChild(inp);
+              }
+              if (f.tips) {
+                const tip = document.createElement('div');
+                tip.style.fontSize = '0.9em';
+                tip.style.color = '#666';
+                tip.style.marginTop = '6px';
+                tip.textContent = f.tips;
+                row.appendChild(tip);
+              }
+              details.appendChild(row);
+            }
+          } else {
+            const note = document.createElement('div');
+            note.style.color = '#666';
+            note.textContent = 'No fields declared in schema.';
+            details.appendChild(note);
+          }
+
+          toggle.addEventListener('change', () => {
+            details.style.display = toggle.checked ? 'block' : 'none';
+          });
+
+          entry.appendChild(details);
+          section.appendChild(entry);
+
+        } catch (e) {
+          console.error('Failed to load news file', filePath, e);
+        }
+      }
+
+    } catch (e) {
+      section.innerHTML = '<div style="color:#b00020;padding:8px;">Could not load news list: ' + e.message + '</div>';
+    }
+  }
+</script>
+<script>
+  window.addEventListener('DOMContentLoaded', buildPastoralCareForIndex);
+  window.addEventListener('DOMContentLoaded', buildEmailForIndex);
+
+  async function buildEmailForIndex() {
+    const section = document.getElementById('EmailingSection');
+    if (!section) return;
+    section.innerHTML = '';
+    try {
+      const resp = await fetch('Functions/emailing/');
+      if (!resp.ok) throw new Error('Failed to load Functions/emailing/');
+      const text = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      const files = Array.from(doc.querySelectorAll('a'))
+        .map(a => a.getAttribute('href'))
+        .filter(h => h && h.endsWith('.js'));
+
+      if (files.length === 0) {
+        section.innerHTML = '<div style="color:#666;padding:8px;">No Emailing scripts found.</div>';
+        return;
+      }
+
+      for (const file of files) {
+        const filePath = 'Functions/emailing/' + file;
+        try {
+          const fileResp = await fetch(filePath);
+          if (!fileResp.ok) throw new Error('Failed to fetch ' + filePath);
+          const fileText = await fileResp.text();
+          let parsed = extractObjectFromJS(fileText, 'functionSchema');
+          if (!parsed) parsed = extractObjectFromJS(fileText, 'embedSchema');
+          if (!parsed) parsed = extractObjectFromJS(fileText, 'formSchema');
+          const title = (parsed && parsed.functionName) ? parsed.functionName : file.replace('.js','');
+
+          const entry = document.createElement('div');
+          entry.className = 'function-entry dyn-entry';
+
+          const header = document.createElement('div');
+          header.className = 'dyn-header';
+
+          const left = document.createElement('div');
+          left.className = 'dyn-left';
+          const label = document.createElement('div');
+          label.className = 'dyn-label';
+          label.textContent = title;
+          if (parsed && parsed.description) {
+            const desc = document.createElement('div');
+            desc.className = 'dyn-desc';
+            desc.textContent = parsed.description;
+            left.appendChild(label);
+            left.appendChild(desc);
+          } else {
+            left.appendChild(label);
+          }
+
+          const leftWrap = document.createElement('div');
+          leftWrap.className = 'dyn-left-wrap';
+
+          const toggle = document.createElement('input');
+          toggle.type = 'checkbox';
+          toggle.id = 'emailFn-' + title.replace(/\s+/g,'-');
+          toggle.className = 'dyn-toggle emailFunction emailing';
+          toggle.dataset.file = file;
+          toggle.value = file.replace('.js','');
+          leftWrap.appendChild(toggle);
+          leftWrap.appendChild(left);
+
+          const btns = document.createElement('div');
+          btns.className = 'dyn-btns';
+
+          header.appendChild(leftWrap);
+          header.appendChild(btns);
+
+          entry.appendChild(header);
+
+          const details = document.createElement('div');
+          details.className = 'dyn-details';
+
+          if (parsed && Array.isArray(parsed.fields)) {
+            for (const f of parsed.fields) {
+              if (f.hidden) continue;
+              const row = document.createElement('div');
+              row.className = 'dyn-row';
+              const lab = document.createElement('label');
+              lab.className = 'dyn-lab';
+              lab.textContent = f.label || f.name;
+              row.appendChild(lab);
+              if (f.type === 'rows' || f.type === 'triples' || (f.placeholders && f.placeholders.length > 1)) {
+                // reuse multi-column editor logic
+                const cols = (f.placeholders && f.placeholders.length) ? f.placeholders.length : (f.type === 'triples' ? 3 : 2);
+                const container = document.createElement('div');
+                container.className = 'rows-container';
+
+                const rowsWrap = document.createElement('div');
+                rowsWrap.className = 'rows-wrap';
+
+                const makeRow = (parts) => {
+                  const r = document.createElement('div');
+                  r.className = 'row-item';
+                  for (let ci = 0; ci < cols; ci++) {
+                    const inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.placeholder = (f.placeholders && f.placeholders[ci]) || (ci === 0 ? 'Type' : (ci === 1 ? 'Subtype' : 'Value'));
+                    inp.className = 'row-input';
+                    inp.value = parts[ci] || '';
+                    r.appendChild(inp);
+                  }
+                  const removeBtn = document.createElement('button');
+                  removeBtn.type = 'button';
+                  removeBtn.textContent = '−';
+                  removeBtn.title = 'Remove';
+                  removeBtn.className = 'row-remove';
+                  removeBtn.addEventListener('click', () => {
+                    rowsWrap.removeChild(r);
+                  });
+                  r.appendChild(removeBtn);
+                  return r;
+                };
+
+                const lines = (f.options && f.options.length) ? f.options.slice() : [];
+                if (lines.length === 0) lines.push('');
+                lines.forEach(line => {
+                  const parts = line.split('|').map(s => s.trim());
+                  while (parts.length < cols) parts.push('');
+                  rowsWrap.appendChild(makeRow(parts));
+                });
+
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.textContent = '+';
+                addBtn.title = 'Add';
+                addBtn.className = 'row-add';
+                addBtn.addEventListener('click', () => {
+                  rowsWrap.appendChild(makeRow(Array(cols).fill('')));
+                });
+
+                container.appendChild(rowsWrap);
+                const addWrap = document.createElement('div');
+                addWrap.style.display = 'flex';
+                addWrap.style.justifyContent = 'flex-start';
+                addWrap.appendChild(addBtn);
+                container.appendChild(addWrap);
+                row.appendChild(container);
+              } else if (Array.isArray(f.options) && f.options.length > 0) {
+                const ta = document.createElement('textarea');
+                ta.rows = 3;
+                ta.style.width = '100%';
+                ta.value = f.options.join('\n');
+                ta.title = f.tips || '';
+                ta.placeholder = f.placeholder || f.tips || '';
+                row.appendChild(ta);
+              } else if (f.type === 'pairs' || f.type === 'rows' || f.type === 'multiline') {
+                const ta = document.createElement('textarea');
+                ta.rows = 4;
+                ta.style.width = '100%';
+                ta.value = (f.options && f.options.join('\n')) || '';
+                ta.title = f.tips || '';
+                ta.placeholder = f.placeholder || f.tips || '';
+                row.appendChild(ta);
+              } else {
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.style.width = '100%';
+                inp.value = f.default || '';
+                inp.title = f.tips || '';
+                inp.placeholder = f.placeholder || '';
+                row.appendChild(inp);
+              }
+              if (f.tips) {
+                const tip = document.createElement('div');
+                tip.style.fontSize = '0.9em';
+                tip.style.color = '#666';
+                tip.style.marginTop = '6px';
+                tip.textContent = f.tips;
+                row.appendChild(tip);
+              }
+              details.appendChild(row);
+            }
+          } else {
+            const note = document.createElement('div');
+            note.style.color = '#666';
+            note.textContent = 'No fields declared in schema.';
+            details.appendChild(note);
+          }
+
+          toggle.addEventListener('change', () => {
+            details.style.display = toggle.checked ? 'block' : 'none';
+          });
+
+          entry.appendChild(details);
+          section.appendChild(entry);
+
+        } catch (e) {
+          console.error('Failed to load email file', filePath, e);
+        }
+      }
+
+    } catch (e) {
+      section.innerHTML = '<div style="color:#b00020;padding:8px;">Could not load emailing list: ' + e.message + '</div>';
+    }
+  }
 </script>
 </body>
 </html>

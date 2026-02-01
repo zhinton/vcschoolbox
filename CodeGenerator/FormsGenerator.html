@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Forms Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+ </head>
+ <body class="forms-generator">
+  <div style="width:1080px; margin:0 0 32px 0; background:#fff; padding:0; box-sizing:border-box;">
+    <div class="disclaimer" style="width:auto; margin:0;">
+      <strong>Disclaimer:</strong> This tool is not developed or endorsed by Schoolbox. Please test all generated code in a development environment before deploying to production.
+    </div>
+    <div class="page-heading">
+      <h1 class="page-title">Forms Generator</h1>
+    </div>
+  <div class="builder-sidebar-wrap">
+    <div id="builder" style="flex:1;">
+      <div class="field-row" style="margin-bottom: 0;">
+        <label for="formName" style="min-width:90px;">Form Name</label>
+        <input id="formName" type="text" placeholder="Form Name" style="width:220px;" />
+      </div>
+      <div class="field-row" style="margin-bottom: 0;">
+        <label for="fieldType">Field Type</label>
+        <select id="fieldType" class="field-type">
+          <option value="text">Text</option>
+          <option value="textarea">Textarea</option>
+          <option value="number">Number</option>
+          <option value="date">Date Picker</option>
+          <option value="dropdown">Dropdown</option>
+          <option value="checkbox">Checkbox</option>
+          <option value="checkboxGroup">Checkbox Group</option>
+          <option value="radio">Radio Group</option>
+        </select>
+        <input id="fieldLabel" type="text" placeholder="Field Label" />
+        <textarea id="fieldOptions" class="field-options" placeholder="Options (comma separated)" style="display:none;" rows="3"></textarea>
+        <button id="addFieldBtn">Add Field</button>
+      </div>
+      <div id="fieldsList"></div>
+      <button id="generateFormBtn">Generate Form</button>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:18px;">
+        <textarea id="output" style="flex:1;" placeholder="Generated JS code or schema will appear here..."></textarea>
+        <button id="restoreBtn" style="background:#10b981;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:1em;cursor:pointer;">Restore</button>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:10px;align-items:center;">
+        <button id="copyOutputBtn" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:1em;cursor:pointer;">Copy Output</button>
+        <span id="copyOutputMsg" style="color:#16a34a;display:none;font-size:0.95em;">Copied!</span>
+      </div>
+    </div>
+    <div id="sidebar">
+      <div id="examplesContainer">
+        <div style="font-size:0.97em;color:#666;margin-top:6px;">Loading example forms...</div>
+      </div>
+      <div style="font-size:0.97em;color:#666;margin-top:10px;">Click an example to import its code into the restore area.</div>
+    </div>
+  </div>
+  </div>
+  <script src="Modals/formModal.js"></script>
+
+  <script src="scripts/formOutput.js"></script>
+
+  <script>
+  
+
+    const fields = [];
+    let editingIndex = -1;
+    const fieldsList = document.getElementById('fieldsList');
+    const output = document.getElementById('output');
+    const restoreButton = document.getElementById('restoreBtn');
+    const copyOutputBtn = document.getElementById('copyOutputBtn');
+    const copyOutputMsg = document.getElementById('copyOutputMsg');
+
+    function humanizeType(type) {
+      // Insert <br> between words for multi-word types
+      const spaced = type.replace(/([a-z])([A-Z])/g, '$1 $2');
+      const withBreak = spaced.replace(/ /g, '<br>');
+      return withBreak.charAt(0).toUpperCase() + withBreak.slice(1);
+    }
+
+    function renderFields() {
+      fieldsList.innerHTML = '';
+      fields.forEach((field, idx) => {
+        const row = document.createElement('div');
+        row.className = 'field-list-row';
+        row.innerHTML = `<label style="min-width:70px;line-height:1.1;">${humanizeType(field.type)}</label> <span style="min-width:55px;">${field.label}</span>
+          <span style="min-width:60px; color:#888;">${field.options ? field.options.join(', ') : ''}</span>
+            <span class="field-actions" style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+              <label title="Show this field at half width, side by side if possible" style="display:flex;align-items:center;gap:2px;font-weight:400;font-size:0.98em;cursor:pointer;user-select:none;">
+                <input type="checkbox" class="half-width-checkbox" data-idx="${idx}" ${field.halfWidth ? 'checked' : ''} style="margin:0 2px 0 0;">½
+              </label>
+              <label title="Mark this field as required" style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:0.98em;cursor:pointer;user-select:none;color:#e11d48;">
+                <input type="checkbox" class="required-checkbox" data-idx="${idx}" ${field.required ? 'checked' : ''} style="margin:0 4px 0 0;">Required
+              </label>
+              <button class="move-up-btn" data-idx="${idx}" title="Move Up" style="background:#e5e7eb;color:#222;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;">▲</button>
+              <button class="move-down-btn" data-idx="${idx}" title="Move Down" style="background:#e5e7eb;color:#222;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;">▼</button>
+              <button class="icon-btn edit-btn" data-idx="${idx}" title="Edit" aria-label="Edit">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
+              </button>
+              <button class="icon-btn icon-trash" data-idx="${idx}" title="Remove" aria-label="Remove">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 3v1H4v2h16V4h-5V3H9zm1 6v7h2V9H10zm4 0v7h2V9h-2zM7 9v7h2V9H7z" fill="currentColor"/></svg>
+              </button>
+            </span>`;
+        row.querySelector('.icon-trash').onclick = function() {
+          fields.splice(idx, 1);
+          renderFields();
+        };
+        row.querySelector('.edit-btn').onclick = function() {
+          // Populate editor inputs with this field's data
+          const f = fields[idx];
+          document.getElementById('fieldLabel').value = f.label || '';
+          document.getElementById('fieldOptions').value = f.options ? f.options.join(', ') : '';
+          document.getElementById('fieldType').value = f.type || 'text';
+          editingIndex = idx;
+          document.getElementById('addFieldBtn').textContent = 'Save';
+          // Scroll builder into view and focus label
+          // Ensure options input visibility matches selected type
+          fieldTypeSelect.onchange();
+          document.getElementById('fieldLabel').focus();
+        };
+        row.querySelector('.move-up-btn').onclick = function() {
+          if (idx > 0) {
+            const temp = fields[idx - 1];
+            fields[idx - 1] = fields[idx];
+            fields[idx] = temp;
+            renderFields();
+          }
+        };
+        row.querySelector('.move-down-btn').onclick = function() {
+          if (idx < fields.length - 1) {
+            const temp = fields[idx + 1];
+            fields[idx + 1] = fields[idx];
+            fields[idx] = temp;
+            renderFields();
+          }
+        };
+        // Half width checkbox handler
+        row.querySelector('.half-width-checkbox').onchange = function(e) {
+          fields[idx].halfWidth = !!e.target.checked;
+          renderFields();
+        };
+        // Required checkbox handler
+        row.querySelector('.required-checkbox').onchange = function(e) {
+          fields[idx].required = !!e.target.checked;
+          renderFields();
+        };
+        fieldsList.appendChild(row);
+      });
+    }
+
+    // Show/hide options input based on field type
+    const fieldTypeSelect = document.getElementById('fieldType');
+    const fieldOptionsInput = document.getElementById('fieldOptions');
+    fieldTypeSelect.onchange = function() {
+      const type = fieldTypeSelect.value;
+      if (["dropdown", "radio", "checkboxGroup"].includes(type)) {
+        fieldOptionsInput.style.display = '';
+        // Use multiline layout for checkbox groups, dropdowns and radios so options can be one-per-line
+        if (type === 'checkboxGroup' || type === 'dropdown' || type === 'radio') {
+          fieldOptionsInput.classList.add('multiline');
+        } else {
+          fieldOptionsInput.classList.remove('multiline');
+        }
+      } else {
+        fieldOptionsInput.style.display = 'none';
+        fieldOptionsInput.value = '';
+      }
+    };
+
+    document.getElementById('addFieldBtn').onclick = function() {
+      const type = fieldTypeSelect.value;
+      const label = document.getElementById('fieldLabel').value.trim();
+      const name = label;
+      const optionsRaw = fieldOptionsInput.value.trim();
+      const options = optionsRaw ? optionsRaw.split(/\s*(?:,|\r?\n)+\s*/).map(s => s.trim()).filter(Boolean) : undefined;
+      if (!label) {
+        alert('Field label is required.');
+        return;
+      }
+      if (editingIndex >= 0) {
+        // Save edits
+        fields[editingIndex].type = type;
+        fields[editingIndex].label = label;
+        fields[editingIndex].name = name;
+        fields[editingIndex].options = options;
+        editingIndex = -1;
+        document.getElementById('addFieldBtn').textContent = 'Add Field';
+      } else {
+        fields.push({ type, label, name, options, halfWidth: false, required: false });
+      }
+      renderFields();
+      document.getElementById('fieldLabel').value = '';
+      fieldOptionsInput.value = '';
+    };
+
+    // Copy output textarea to clipboard
+    if (copyOutputBtn) {
+      copyOutputBtn.onclick = function() {
+        const text = (output && output.value) ? output.value : '';
+        if (!text) {
+          alert('Nothing to copy. The output box is empty.');
+          return;
+        }
+        // Prefer navigator.clipboard
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function() {
+            if (copyOutputMsg) { copyOutputMsg.style.display = ''; }
+            const original = copyOutputBtn.textContent;
+            copyOutputBtn.textContent = 'Copied';
+            setTimeout(function() {
+              copyOutputBtn.textContent = original;
+              if (copyOutputMsg) copyOutputMsg.style.display = 'none';
+            }, 1400);
+          }).catch(function() {
+            // fallback to execCommand
+            fallbackCopy(text);
+          });
+        } else {
+          fallbackCopy(text);
+        }
+      };
+    }
+
+    function fallbackCopy(text) {
+      try {
+        output.focus();
+        output.select();
+        const ok = document.execCommand('copy');
+        if (ok) {
+          if (copyOutputMsg) { copyOutputMsg.style.display = ''; }
+          const original = copyOutputBtn.textContent;
+          copyOutputBtn.textContent = 'Copied';
+          setTimeout(function() {
+            copyOutputBtn.textContent = original;
+            if (copyOutputMsg) copyOutputMsg.style.display = 'none';
+          }, 1400);
+        } else {
+          alert('Copy failed. Please select and copy manually.');
+        }
+      } catch (e) {
+        alert('Copy failed. Please select and copy manually.');
+      }
+    }
+
+    function generateForm() {
+      const formName = document.getElementById('formName').value.trim();
+      // Only include halfWidth if true, to keep schema clean
+      const schemaObj = { formName: formName || undefined, fields: fields.map(f => {
+        const out = { type: f.type, label: f.label, name: f.name };
+        if (f.options) out.options = f.options;
+        if (f.halfWidth) out.halfWidth = true;
+        if (f.required) out.required = true;
+        return out;
+      }) };
+      let jsCode = '';
+      jsCode += "// Generated NCCD Form\n";
+      jsCode += "const formSchema = " + JSON.stringify(schemaObj, null, 2) + ";\n\n";
+      jsCode += "function renderNCCDForm(containerId) {\n";
+      jsCode += "  const container = document.getElementById(containerId);\n";
+      jsCode += "  if (!container) return;\n";
+      jsCode += "  let html = '';\n";
+      jsCode += "  if (formSchema.formName) { html += '<h2>' + formSchema.formName + '</h2>'; }\n";
+      jsCode += "  html += '<form id=\'nccdGeneratedForm\'>';\n";
+      jsCode += "  let i = 0;\n";
+      jsCode += "  while (i < formSchema.fields.length) {\n";
+      jsCode += "    const field = formSchema.fields[i];\n";
+      jsCode += "    if (field.halfWidth && formSchema.fields[i+1] && formSchema.fields[i+1].halfWidth) {\n";
+      jsCode += "      const field2 = formSchema.fields[i+1];\n";
+      jsCode += "      html += '<div style=\\'display:flex;gap:16px;margin-bottom:16px;\\'>';\n";
+      jsCode += "      [field, field2].forEach(function(f) {\n";
+      jsCode += "        html += '<div style=\\'flex:1;\\'>';\n";
+      jsCode += "        html += '<label style=\\'font-weight:500;display:block;margin-bottom:4px;\\'>' + f.label + '</label>';\n";
+      jsCode += "        switch(f.type) {\n";
+      jsCode += "          case 'text':\n";
+      jsCode += "            html += '<input type=\\'text\\' name=\\'' + f.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (f.required ? ' required' : '') + '>';\n";
+      jsCode += "            break;\n";
+      jsCode += "          case 'textarea':\n";
+      jsCode += "            html += '<textarea name=\\'' + f.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (f.required ? ' required' : '') + '></textarea>';\n";
+      jsCode += "            break;\n";
+      jsCode += "          case 'number':\n";
+      jsCode += "            html += '<input type=\\'number\\' name=\\'' + f.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (f.required ? ' required' : '') + '>';\n";
+      jsCode += "            break;\n";
+      jsCode += "          case 'date':\n";
+      jsCode += "            html += '<input type=\\'date\\' name=\\'' + f.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (f.required ? ' required' : '') + '>';\n";
+      jsCode += "            break;\n";
+      jsCode += "          case 'dropdown':\n";
+      jsCode += "            html += '<select name=\\'' + f.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (f.required ? ' required' : '') + '>';\n";
+      jsCode += "            if (f.options) { f.options.forEach(function(opt) { html += '<option value=\\'' + opt + '\\'>' + opt + '</option>'; }); }\n";
+      jsCode += "            html += '</select>';\n";
+      jsCode += "            break;\n";
+      jsCode += "          case 'checkbox':\n";
+      jsCode += "            html += '<input type=\\'checkbox\\' name=\\'' + f.name + '\\' value=\\'1\\'>';\n";
+      jsCode += "            break;\n";
+      jsCode += "          case 'checkboxGroup':\n";
+      jsCode += "            if (f.options) { f.options.forEach(function(opt) { html += '<label style=\\'margin-right:12px;\\'><input type=\\'checkbox\\' name=\\'' + f.name + '\\' value=\\'' + opt + '\\'>' + opt + '</label>'; }); }\n";
+      jsCode += "            break;\n";
+      jsCode += "          case 'radio':\n";
+      jsCode += "            if (f.options) { f.options.forEach(function(opt) { html += '<label style=\\'margin-right:12px;\\'><input type=\\'radio\\' name=\\'' + f.name + '\\' value=\\'' + opt + '\\'>' + opt + '</label>'; }); }\n";
+      jsCode += "            break;\n";
+      jsCode += "        }\n";
+      jsCode += "        html += '</div>';\n";
+      jsCode += "      });\n";
+      jsCode += "      html += '</div>';\n";
+      jsCode += "      i += 2;\n";
+      jsCode += "      continue;\n";
+      jsCode += "    }\n";
+      jsCode += "    html += '<div style=\\'margin-bottom:16px;\\'>';\n";
+      jsCode += "    html += '<label style=\\'font-weight:500;display:block;margin-bottom:4px;\\'>' + field.label + '</label>';\n";
+      jsCode += "    switch(field.type) {\n";
+      jsCode += "      case 'text':\n";
+      jsCode += "        html += '<input type=\\'text\\' name=\\'' + field.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (field.required ? ' required' : '') + '>';\n";
+      jsCode += "        break;\n";
+      jsCode += "      case 'textarea':\n";
+      jsCode += "        html += '<textarea name=\\'' + field.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (field.required ? ' required' : '') + '></textarea>';\n";
+      jsCode += "        break;\n";
+      jsCode += "      case 'number':\n";
+      jsCode += "        html += '<input type=\\'number\\' name=\\'' + field.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (field.required ? ' required' : '') + '>';\n";
+      jsCode += "        break;\n";
+      jsCode += "      case 'date':\n";
+      jsCode += "        html += '<input type=\\'date\\' name=\\'' + field.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (field.required ? ' required' : '') + '>';\n";
+      jsCode += "        break;\n";
+      jsCode += "      case 'dropdown':\n";
+      jsCode += "        html += '<select name=\\'' + field.name + '\\' style=\\'width:100%;padding:7px;border-radius:6px;border:1px solid #d0d7de;\\'' + (field.required ? ' required' : '') + '>';\n";
+      jsCode += "        if (field.options) { field.options.forEach(function(opt) { html += '<option value=\\'' + opt + '\\'>' + opt + '</option>'; }); }\n";
+      jsCode += "        html += '</select>';\n";
+      jsCode += "        break;\n";
+      jsCode += "      case 'checkbox':\n";
+      jsCode += "        html += '<input type=\\'checkbox\\' name=\\'' + field.name + '\\' value=\\'1\\'>';\n";
+      jsCode += "        break;\n";
+      jsCode += "      case 'checkboxGroup':\n";
+      jsCode += "        if (field.options) { field.options.forEach(function(opt) { html += '<label style=\\'margin-right:12px;\\'><input type=\\'checkbox\\' name=\\'' + field.name + '\\' value=\\'' + opt + '\\'>' + opt + '</label>'; }); }\n";
+      jsCode += "        break;\n";
+      jsCode += "      case 'radio':\n";
+      jsCode += "        if (field.options) { field.options.forEach(function(opt) { html += '<label style=\\'margin-right:12px;\\'><input type=\\'radio\\' name=\\'' + field.name + '\\' value=\\'' + opt + '\\'>' + opt + '</label>'; }); }\n";
+      jsCode += "        break;\n";
+      jsCode += "    }\n";
+      jsCode += "    html += '</div>';\n";
+      jsCode += "    i++;\n";
+      jsCode += "  }\n";
+      jsCode += "  html += '</form>';\n";
+      jsCode += "  container.innerHTML = html;\n";
+      jsCode += "}\n\n";
+      jsCode += "// Usage: renderNCCDForm('yourContainerId');\n";
+      output.value = jsCode;
+    }
+
+    // Bind Generate Form button to shared builder in scripts/formOutput.js
+    document.getElementById('generateFormBtn').onclick = function() {
+      const formName = document.getElementById('formName').value.trim();
+      if (typeof outputFormToTextarea === 'function') {
+        outputFormToTextarea(fields, formName);
+      } else {
+        // Fallback to the inline generator if the external script isn't available
+        if (typeof generateForm === 'function') generateForm();
+      }
+    };
+
+    // Restore from pasted schema or generated code
+    restoreButton.onclick = function() {
+      let val = output.value.trim();
+      
+      if (!val) {
+        alert('Paste generated code or schema into the box first.');
+        return;
+      }
+      let jsonStr = '';
+
+      // Try to locate `const formSchema = { ... };` and extract the full object
+      const constIdx = val.indexOf('const formSchema');
+      if (constIdx !== -1) {
+        const firstBrace = val.indexOf('{', constIdx);
+        if (firstBrace !== -1) {
+          let depth = 0;
+          let endIdx = -1;
+          for (let i = firstBrace; i < val.length; i++) {
+            const ch = val[i];
+            if (ch === '{') depth++;
+            else if (ch === '}') {
+              depth--;
+              if (depth === 0) {
+                endIdx = i;
+                break;
+              }
+            }
+          }
+          if (endIdx !== -1) {
+            jsonStr = val.slice(firstBrace, endIdx + 1);
+          }
+        }
+      }
+
+      // Fallback: use first/last braces in the text
+      if (!jsonStr) {
+        const braceStart = val.indexOf('{');
+        const braceEnd = val.lastIndexOf('}');
+        if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
+          jsonStr = val.substring(braceStart, braceEnd + 1);
+        } else {
+          jsonStr = val;
+        }
+      }
+
+      
+      try {
+        if (jsonStr.trim().endsWith(';')) jsonStr = jsonStr.trim().slice(0, -1);
+        const schema = JSON.parse(jsonStr);
+        document.getElementById('formName').value = schema.formName || '';
+        fields.length = 0;
+        if (Array.isArray(schema.fields)) {
+          schema.fields.forEach(f => {
+            fields.push({
+              type: f.type || '',
+              label: f.label || '',
+              name: f.name || f.label || '',
+              options: f.options || undefined,
+              halfWidth: !!f.halfWidth,
+              required: !!f.required
+            });
+          });
+        }
+        renderFields();
+        console.log('Form restored from pasted schema');
+      } catch (e) {
+        console.error('Restore failed:', e);
+        alert('Could not parse schema. Please paste valid JSON or generated code.');
+      }
+    };
+
+    // Add Preview Button
+    const previewBtn = document.createElement('button');
+    previewBtn.textContent = 'Preview Form';
+    previewBtn.id = 'previewFormBtn';
+    previewBtn.style.marginLeft = '12px';
+    previewBtn.style.background = '#6366f1';
+    previewBtn.style.color = '#fff';
+    previewBtn.style.border = 'none';
+    previewBtn.style.borderRadius = '6px';
+    previewBtn.style.padding = '8px 18px';
+    previewBtn.style.fontSize = '1em';
+    previewBtn.style.cursor = 'pointer';
+    previewBtn.style.transition = 'background 0.2s';
+    previewBtn.onmouseover = function() { previewBtn.style.background = '#4338ca'; };
+    previewBtn.onmouseout = function() { previewBtn.style.background = '#6366f1'; };
+    document.getElementById('generateFormBtn').after(previewBtn);
+
+    previewBtn.onclick = function() {
+      if (fields.length === 0) {
+        alert('Add at least one field to preview.');
+        return;
+      }
+      const formName = document.getElementById('formName').value.trim();
+      const schemaObj = { formName: formName || undefined, fields: fields.map(f => ({ type: f.type, label: f.label, name: f.name, options: f.options, halfWidth: !!f.halfWidth, required: !!f.required })) };
+      if (typeof formShowModal === 'function') {
+        formShowModal(schemaObj);
+      } else {
+        alert('formShowModal function not found. Make sure formModal.js is loaded.');
+      }
+    };
+
+    function loadTemplate(template) {
+      document.getElementById('formName').value = template.formName || '';
+      fields.length = 0;
+      if (Array.isArray(template.fields)) {
+        template.fields.forEach(f => {
+          fields.push({
+            type: f.type || '',
+            label: f.label || '',
+            name: f.name || f.label || '',
+            options: f.options || undefined,
+            halfWidth: !!f.halfWidth,
+            required: !!f.required
+          });
+        });
+      }
+      renderFields();
+      // Also update the output textarea with generated code
+      // invoke the generator directly (button has no onclick handler)
+      if (typeof generateForm === 'function') {
+        generateForm();
+      }
+    }
+    // legacy hardcoded template buttons removed; sidebar is built dynamically
+    
+    // --- Dynamically load example forms from the Forms/ folder ---
+    async function extractObjectFromJS(text, varName) {
+      const idx = text.indexOf(varName);
+      if (idx === -1) return null;
+      const braceStart = text.indexOf('{', idx);
+      if (braceStart === -1) return null;
+      let i = braceStart;
+      let depth = 0;
+      for (; i < text.length; i++) {
+        if (text[i] === '{') depth++;
+        else if (text[i] === '}') {
+          depth--;
+          if (depth === 0) {
+            const objText = text.slice(braceStart, i + 1);
+            // try JSON parse first, then fall back to evaluating the JS literal
+            try {
+              return JSON.parse(objText);
+            } catch (e) {
+              try {
+                /* eslint-disable no-new-func */
+                const evaluated = new Function('return ' + objText)();
+                return evaluated;
+              } catch (e2) {
+                return null;
+              }
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    async function buildExamplesSidebar() {
+      const container = document.getElementById('examplesContainer');
+      container.innerHTML = '';
+      try {
+        const resp = await fetch('Forms/');
+        if (!resp.ok) throw new Error('Failed to load Forms/');
+        const text = await resp.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const links = Array.from(doc.querySelectorAll('a'))
+          .map(a => a.getAttribute('href'))
+          .filter(h => h && h.endsWith('/'))
+          .filter(h => h !== '../');
+
+        if (links.length === 0) {
+          container.innerHTML = '<div style="color:#666">No example folders found in Forms/</div>';
+          return;
+        }
+
+        for (const sub of links) {
+          const folderName = sub.replace(/\/+$/, '');
+          const section = document.createElement('div');
+          const h = document.createElement('h3');
+          h.textContent = folderName + ' Example Forms';
+          section.appendChild(h);
+
+          // fetch folder listing
+          try {
+            const resp2 = await fetch('Forms/' + sub);
+            if (!resp2.ok) throw new Error('Failed to load folder');
+            const t2 = await resp2.text();
+            const d2 = parser.parseFromString(t2, 'text/html');
+            const files = Array.from(d2.querySelectorAll('a'))
+              .map(a => a.getAttribute('href'))
+              .filter(h => h && h.endsWith('.js'));
+
+            if (files.length === 0) {
+              const note = document.createElement('div');
+              note.style.color = '#666';
+              note.style.marginBottom = '8px';
+              note.textContent = 'No form files found.';
+              section.appendChild(note);
+            }
+
+            for (const file of files) {
+              const filePath = 'Forms/' + sub + file;
+              try {
+                const fileResp = await fetch(filePath);
+                if (!fileResp.ok) throw new Error('Failed');
+                const fileText = await fileResp.text();
+                const parsed = await extractObjectFromJS(fileText, 'formSchema');
+                const label = (parsed && parsed.formName) ? parsed.formName : file.replace('.js','');
+                const btn = document.createElement('button');
+                btn.className = 'template-btn';
+                btn.textContent = label;
+                btn.onclick = () => {
+                  // import file content into restore/output textarea and trigger Restore
+                  const out = document.getElementById('output');
+                  if (out) out.value = fileText;
+                  // If we successfully extracted a schema object, prefer loading it directly
+                  if (parsed) {
+                    try {
+                      loadTemplate(parsed);
+                      // ensure generated code is produced (loadTemplate calls generateForm if available)
+                      const gen = document.getElementById('generateFormBtn');
+                      if (gen) gen.click();
+                    } catch (e) {
+                      console.error('loadTemplate failed', e);
+                    }
+                    return;
+                  }
+                  const rst = document.getElementById('restoreBtn');
+                  if (rst) {
+                    // give the DOM a moment to update and run the restore
+                    setTimeout(() => rst.click(), 10);
+                    // after restore, trigger the Generate Form button so output is refreshed
+                    setTimeout(() => {
+                      const gen = document.getElementById('generateFormBtn');
+                      if (gen) gen.click();
+                      else if (typeof generateForm === 'function') generateForm();
+                    }, 140);
+                  }
+                };
+                section.appendChild(btn);
+              } catch (e) {
+                console.error('file load failed', filePath, e);
+              }
+            }
+          } catch (e) {
+            console.error('folder read failed', sub, e);
+          }
+
+          container.appendChild(section);
+        }
+
+      } catch (e) {
+        container.innerHTML = '<div style="color:#b00020">Could not load example forms: ' + e.message + '</div>';
+      }
+    }
+
+    // Build examples on load (non-blocking)
+    window.addEventListener('DOMContentLoaded', buildExamplesSidebar);
+  </script>
+</body>
+</html>

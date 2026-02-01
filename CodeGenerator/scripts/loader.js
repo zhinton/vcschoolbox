@@ -1,18 +1,55 @@
+// Helper to normalize script URLs for reliable comparison
+const getNormalizedScriptUrl = (url) => {
+    try {
+        return new URL(url, document.baseURI).href;
+    } catch (e) {
+        // If URL construction fails, fall back to the original string
+        return url;
+    }
+};
+
+// Track loaded script URLs (normalized) to avoid duplicates
+const loadedScripts = new Set();
+
 // Function to load a script from a URL if not already loaded
 const loadScript = (url) => {
     if (!url) {
         console.error('No JavaScriptURL provided. Script not loaded.');
         return;
     }
-    if (!document.querySelector(`script[src="${url}"]`)) {
-        const script = document.createElement('script');
-        script.src = url;
-        script.onload = () => console.log(`${url} loaded successfully.`);
-        script.onerror = () => console.error(`Failed to load ${url}.`);
-        document.head.appendChild(script);
-    } else {
+
+    const normalizedUrl = getNormalizedScriptUrl(url);
+
+    // Check if this script URL has already been recorded as loaded
+    if (loadedScripts.has(normalizedUrl)) {
         console.log(`Script ${url} already loaded.`);
+        return;
     }
+
+    // Also check existing script tags in the document for an equivalent URL
+    const existingScripts = document.getElementsByTagName('script');
+    for (let i = 0; i < existingScripts.length; i++) {
+        const existingSrc = existingScripts[i].getAttribute('src');
+        if (!existingSrc) {
+            continue;
+        }
+        const normalizedExistingSrc = getNormalizedScriptUrl(existingSrc);
+        if (normalizedExistingSrc === normalizedUrl) {
+            loadedScripts.add(normalizedUrl);
+            console.log(`Script ${url} already loaded.`);
+            return;
+        }
+    }
+
+    const script = document.createElement('script');
+    script.src = url;
+    script.onload = () => console.log(`${url} loaded successfully.`);
+    script.onerror = () => console.error(`Failed to load ${url}.`);
+
+    // Record the script as loaded as soon as we start loading it
+    loadedScripts.add(normalizedUrl);
+
+    document.head.appendChild(script);
 };
 
 // Function to check if the current URL matches the pattern

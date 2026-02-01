@@ -1,134 +1,125 @@
+import { generateCombinedFromUI } from './combinedOutput.js';
+
 // Make addDynamicRow globally available for fillDynamicRows and restore logic
 function addDynamicRow(container, fields) {
   const row = document.createElement('div');
   row.style.display = 'flex';
   row.style.gap = '8px';
-  row.style.alignItems = 'center';
-  row.style.width = '100%';
-  fields.forEach((field, i) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = field.placeholder;
-    input.value = field.value || '';
-    input.style.width = field.width;
-    input.style.display = 'inline-block';
-    input.style.verticalAlign = 'middle';
-    // Add _alert suffix to Subtype Alert Pairs fields for uniqueness
-    if (container.id === 'pcFunction-subtypeAlertPairs') {
-      input.id = `${field.placeholder.replace(/\s+/g, '_').toLowerCase()}_${i}_alert`;
-    }
-    row.appendChild(input);
-  });
-  const removeBtn = document.createElement('button');
-  removeBtn.type = 'button';
-  removeBtn.textContent = '–';
-  removeBtn.title = 'Remove this row';
-  removeBtn.className = 'row-action-btn';
-  removeBtn.onclick = () => {
-    container.removeChild(row);
-    // Optionally update add button visibility if needed
-  };
-  row.appendChild(removeBtn);
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.textContent = '+';
-  addBtn.title = 'Add another row';
-  addBtn.className = 'row-action-btn';
-  addBtn.onclick = () => {
-    addDynamicRow(container, fields.map(f => ({ ...f, value: '' })));
-    updateAddBtnVisibility(container);
-  };
-  row.appendChild(addBtn);
-  container.appendChild(row);
-  updateAddBtnVisibility(container);
-}
+  function restoreAllConfig() {
+    // --- Loader restore ---
+    const loaderCode = document.getElementById('restoreInput').value;
 
-function updateAddBtnVisibility(container) {
-  const rows = container.querySelectorAll('div');
-  rows.forEach((r, idx) => {
-    const btn = r.querySelector('button.row-action-btn:last-of-type');
-    if (btn) btn.style.display = idx === rows.length - 1 ? 'inline-block' : 'none';
-  });
-// End of updateAddBtnVisibility
-}
-// Make fillDynamicRows globally available for restore logic and dynamic row creation
-function fillDynamicRows(container, data, fieldDefs) {
-  container.innerHTML = '';
-  if (Array.isArray(data) && data.length > 0) {
-    data.forEach(item => {
-      // For Subtype Alert Pairs, accept both 'Message' and 'Alert Message' as placeholder
-      let fields = fieldDefs.map((def, i) => {
-        let placeholder = def.placeholder;
-        let value = item[i];
-        if (container.id === 'pcFunction-subtypeAlertPairs' && i === 1) {
-          // Always use 'Alert Message' as placeholder for the second field
-          placeholder = 'Alert Message';
-        }
-        return { ...def, value, placeholder };
-      });
-      if (typeof addDynamicRow === 'function') {
-        addDynamicRow(container, fields);
-      } else if (container.addDynamicRow) {
-        container.addDynamicRow(fields);
+    // Extract values using regex
+    const getString = (name) => {
+      const match = loaderCode.match(new RegExp(`const\\s+${name}\\s*=\\s*['"]([^'\"]*)['"]`));
+      return match ? match[1] : '';
+    };
+    const getWindowString = (name) => {
+      const match = loaderCode.match(new RegExp(`window\\.${name}\\s*=\\s*['"]([^'\"]*)['"]`));
+      return match ? match[1] : '';
+    };
+    const getModules = () => {
+      const match = loaderCode.match(/const modules = (\{[\s\S]*?\});/);
+      if (match) {
+        try {
+          return JSON.parse(match[1].replace(/(\w+):/g, '"$1":').replace(/'/g, '"'));
+        } catch (e) {}
+      }
+      return {};
+    };
+
+    // Set loader fields
+    document.getElementById('schoolboxDomain').value = getString('schoolboxDomain');
+    document.getElementById('JavaScriptURL').value = getString('JavaScriptURL');
+    document.getElementById('acceptColor').value = getWindowString('acceptColor');
+    document.getElementById('rejectColor').value = getWindowString('rejectColor');
+
+    // Set module checkboxes
+    const modules = getModules();
+    ['PastoralCare', 'Emailing', 'News'].forEach(mod => {
+      const cb = document.getElementById(mod);
+      if (cb && typeof modules[mod] === 'boolean') {
+        cb.checked = modules[mod];
+        toggleSection(mod);
       }
     });
-    updateAddBtnVisibility(container);
-  } else {
-    // Add one empty row by default
-    if (typeof addDynamicRow === 'function') {
-      addDynamicRow(container, fieldDefs);
-    } else if (container.addDynamicRow) {
-      container.addDynamicRow(fieldDefs);
+
+    // --- Functions restore ---
+    const functionsCode = document.getElementById('restoreFunctionsInput').value;
+
+    // Find all variable assignments like: const function_option = "value";
+    const varRegex = /const\s+([a-zA-Z0-9_]+)_([a-zA-Z0-9_]+)\s*=\s*(['"`])([\s\S]*?)\3;/g;
+    let match;
+    while ((match = varRegex.exec(functionsCode)) !== null) {
+      const [_, fn, key, , value] = match;
+      // Try all possible className prefixes
+      const pcInput = document.getElementById(`pcFunction-${fn}-${key}`);
+      const emailInput = document.getElementById(`emailFunction-${fn}-${key}`);
+      const newsInput = document.getElementById(`newsFunction-${fn}-${key}`);
+
+      // Set the value if the input exists
+      if (pcInput) pcInput.value = value;
+      if (emailInput) emailInput.value = value;
+      if (newsInput) newsInput.value = value;
+
+      // Also check the checkbox for this function
+      const pcCheckbox = document.querySelector(`.pcFunction[value="${fn}"]`);
+      const emailCheckbox = document.querySelector(`.emailFunction[value="${fn}"]`);
+      const newsCheckbox = document.querySelector(`.newsFunction[value="${fn}"]`);
+      if (pcCheckbox) pcCheckbox.checked = true;
+      if (emailCheckbox) emailCheckbox.checked = true;
+      if (newsCheckbox) newsCheckbox.checked = true;
     }
-    updateAddBtnVisibility(container);
+
+    // After restoring variables, also check function checkboxes for included scripts
+    ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
+      document.querySelectorAll(`.${className}`).forEach(cb => {
+        const fn = cb.value;
+        // Look for the script block in the code (accept old and new separators)
+        const regex = new RegExp(`//\\s*-+\\s*(?:.*\\/)?${fn}\\.js\\s*-+`);
+        // Use the correct code source (functionsCode for restoreAllConfig, code for restoreConfig)
+        const codeSource = typeof functionsCode !== 'undefined' ? functionsCode : code;
+        if (regex.test(codeSource)) {
+          cb.checked = true;
+          cb.dispatchEvent(new Event('change'));
+        }
+      });
+    });
+
+    // Optionally, trigger change events to show/hide options UI
+    ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
+      document.querySelectorAll(`.${className}`).forEach(cb => {
+        cb.dispatchEvent(new Event('change'));
+      });
+    });
   }
-}
-function restoreCombinedConfig() {
-  // Restore dynamic rows for Action Checker
+  window.restoreAllConfig = restoreAllConfig;
+  
+  // Helper to parse array variables from the combined restore input
   function parseArrayVar(varName) {
-    // Match: const actionCheckerRows = [ ... ]; (allow spaces, newlines, trailing comma)
-    const arrMatch = code.match(new RegExp(`const\\s+${varName}\\s*=\\s*(\\[[\\s\\S]*?\\]);`, 'm'));
+    const codeSourceEl = document.getElementById('restoreCombinedInput');
+    const codeSource = codeSourceEl ? codeSourceEl.value : '';
+    const arrMatch = codeSource.match(new RegExp(`const\\s+${varName}\\s*=\\s*(\\[[\\s\\S]*?\\]);`));
     if (arrMatch) {
       let arrStr = arrMatch[1]
-        .replace(/(,)(\\s*\\])/g, '$2') // Remove trailing comma before ]
-        .replace(/\r?\n/g, ' ') // Remove newlines
-        .replace(/\s+/g, ' '); // Collapse whitespace
-      // Try to fix single quotes to double quotes for JSON.parse
+        .replace(/(,)(\s*\])/g, '$2')
+        .replace(/\r?\n/g, ' ')
+        .replace(/\s+/g, ' ');
       let jsonStr = arrStr.replace(/'/g, '"');
       try {
         return JSON.parse(jsonStr);
       } catch (e) {
         try {
-          // Fallback: use eval if JSON.parse fails
           // eslint-disable-next-line no-eval
           return eval(arrStr);
         } catch (err) {
           console.error('Failed to parse array for', varName, arrStr, err);
         }
       }
-    } else {
-      // Try to find the array with a more lenient regex (missing semicolon, etc)
-      const looseMatch = code.match(new RegExp(`${varName}\\s*=\\s*(\\[[\\s\\S]*?\\])`, 'm'));
-      if (looseMatch) {
-        let arrStr = looseMatch[1]
-          .replace(/(,)(\\s*\\])/g, '$2')
-          .replace(/\r?\n/g, ' ')
-          .replace(/\s+/g, ' ');
-        let jsonStr = arrStr.replace(/'/g, '"');
-        try {
-          return JSON.parse(jsonStr);
-        } catch (e) {
-          try {
-            // eslint-disable-next-line no-eval
-            return eval(arrStr);
-          } catch (err) {
-            console.error('Failed to parse array for', varName, arrStr, err);
-          }
-        }
-      }
     }
     return null;
   }
+
   setTimeout(() => {
     // Action Checker
     const actionCheckerArr = parseArrayVar('actionCheckerRows');
@@ -196,7 +187,7 @@ function restoreCombinedConfig() {
   }, 0);
   const code = document.getElementById('restoreCombinedInput').value;
   // Re-enable function checkboxes based on script block comments
-  const scriptBlockRegex = /\/\/ ---- scripts\/([a-zA-Z0-9_]+)\.js ----/g;
+    const scriptBlockRegex = /\/\/\s*-+\s*(?:.*\/)?([a-zA-Z0-9_]+)\.js\s*-+/g;
   let scriptMatch;
   while ((scriptMatch = scriptBlockRegex.exec(code)) !== null) {
     const fn = scriptMatch[1];
@@ -263,33 +254,50 @@ function restoreCombinedConfig() {
     });
   });
 }
+
+function restoreCombinedConfig() {
+  const combined = document.getElementById('restoreCombinedInput')?.value || '';
+  if (!combined) return;
+  const sepRegex = /\/\/\s*-+\s*.*?\s*-+\s*\n/;
+  const idx = combined.search(sepRegex);
+  if (idx === -1) {
+    document.getElementById('restoreInput').value = combined;
+    document.getElementById('restoreFunctionsInput').value = '';
+  } else {
+    document.getElementById('restoreInput').value = combined.slice(0, idx);
+    document.getElementById('restoreFunctionsInput').value = combined.slice(idx);
+  }
+  try { restoreConfig(); } catch (e) { console.warn('restoreConfig failed', e); }
+  try { restoreFunctionsConfig(); } catch (e) { console.warn('restoreFunctionsConfig failed', e); }
+  if (typeof restoreAllConfig === 'function') {
+    try { restoreAllConfig(); } catch (e) {}
+  }
+}
 window.restoreCombinedConfig = restoreCombinedConfig;
 // Combine loader and functions code for Schoolbox
-function generateCombinedOutput() {
-  // Get split outputs
-  const loaderCode = document.getElementById('output').value;
-  const functionsCode = document.getElementById('functionsOutput').value;
-
-  // Remove all <script> tags
-  let combined = (loaderCode + '\n' + functionsCode)
-    .replace(/<script>/gi, '')
-    .replace(/<\/script>/gi, '');
-
-  // Move all variable declarations to the top
-  const varRegex = /^(\s*const\s+[a-zA-Z0-9_]+\s*=.*;\s*)/gm;
-  const vars = Array.from(combined.matchAll(varRegex)).map(m => m[0]).join('\n');
-  combined = combined.replace(varRegex, '');
-
-  // Remove extra blank lines
-  combined = combined.replace(/\n{3,}/g, '\n\n');
-
-  // Wrap in a single <script> block
-  combined = `<script>\n${vars}\n${combined.trim()}\n</script>`;
-
-  document.getElementById('combinedOutput').value = combined;
+async function generateCombinedOutput() {
+  try {
+    let result;
+    if (typeof generateCombinedFromUI === 'function') {
+      result = await generateCombinedFromUI();
+    } else {
+      // Fallback: try dynamic import if static import failed
+      try {
+        const mod = await import('./combinedOutput.js');
+        result = await mod.generateCombinedFromUI();
+      } catch (ie) {
+        throw new Error('generateCombinedFromUI unavailable: ' + ie.message);
+      }
+    }
+    if (document.getElementById('output')) document.getElementById('output').value = result.loaderCode;
+    if (document.getElementById('functionsOutput')) document.getElementById('functionsOutput').value = result.functionsCode;
+    if (document.getElementById('combinedOutput')) document.getElementById('combinedOutput').value = result.combinedCode;
+  } catch (err) {
+    console.error('generateCombinedFromUI failed', err);
+    if (document.getElementById('combinedOutput')) document.getElementById('combinedOutput').value = '// Error generating combined output: ' + (err && err.message ? err.message : String(err));
+  }
 }
 window.generateCombinedOutput = generateCombinedOutput;
-import { PastoralCare, Emailing, New } from './ModuleFunctions.js';
 
 // Only one definition!
 function toggleSection(section) {
@@ -390,208 +398,21 @@ function setOutputMode(mode) {
 }
 
 async function generateCode() {
-  // Collect static fields
-  const schoolboxDomain = window.location.origin;
-  const JavaScriptURL = document.getElementById('JavaScriptURL').value;
-  const acceptColor = document.getElementById('acceptColor').value;
-  const rejectColor = document.getElementById('rejectColor').value;
-
-  // Collect selected modules
-  const modules = {
-    PastoralCare: document.getElementById('PastoralCare')?.checked || false,
-    Emailing: document.getElementById('Emailing')?.checked || false,
-    News: document.getElementById('News')?.checked || false
-  };
-
-  // --- Loader.js generation ---
-  let loaderCode = `<script>
-// Generated Schoolbox Addons Loader Script
-
-const schoolboxDomain = window.location.origin;
-const JavaScriptURL = '${JavaScriptURL}';
-window.acceptColor = '${acceptColor}';
-window.rejectColor = '${rejectColor}';
-
-const modules = ${JSON.stringify(modules, null, 2)};
-
-`;
-
-  // Fetch and append the loader logic
   try {
-    const response = await fetch('scripts/loader.js');
-    if (!response.ok) throw new Error('Failed to load loader.js');
-    const loaderContent = await response.text();
-    loaderCode += loaderContent;
+    let result;
+    if (typeof generateCombinedFromUI === 'function') {
+      result = await generateCombinedFromUI();
+    } else {
+      const mod = await import('./combinedOutput.js');
+      result = await mod.generateCombinedFromUI();
+    }
+    if (document.getElementById('output')) document.getElementById('output').value = result.loaderCode;
+    if (document.getElementById('functionsOutput')) document.getElementById('functionsOutput').value = result.functionsCode;
   } catch (err) {
-    loaderCode += `// ERROR: Could not load loader.js: ${err.message}\n`;
+    console.error('generateCombinedFromUI failed', err);
+    if (document.getElementById('output')) document.getElementById('output').value = '// Error generating loader: ' + (err && err.message ? err.message : String(err));
+    if (document.getElementById('functionsOutput')) document.getElementById('functionsOutput').value = '// Error generating functions: ' + (err && err.message ? err.message : String(err));
   }
-
-  loaderCode += `\n</script>`;
-
-  // --- Functions.js generation ---
-  // Gather selected functions for each module
-  function getCheckedFunctions(className) {
-    return Array.from(document.querySelectorAll(`.${className}`))
-      .filter(cb => cb.checked)
-      .map(cb => cb.value);
-  }
-  const selectedPastoralCare = getCheckedFunctions('pcFunction');
-  const selectedEmailing = getCheckedFunctions('emailFunction');
-  const selectedNews = getCheckedFunctions('newsFunction');
-
-  // Collect all entered options for selected functions
-  function collectOptions(selected, section, className) {
-    const options = {};
-    selected.forEach(fn => {
-      // Find the function definition
-      const funcDef = (section.find(f => f.fileName.replace('.js', '') === fn));
-      if (funcDef && funcDef.options && funcDef.options.length > 0) {
-        options[fn] = {};
-        funcDef.options.forEach(opt => {
-          const input = document.getElementById(`${className}-${fn}-${opt.key}`);
-          if (input) {
-            options[fn][opt.key] = input.value;
-          }
-        });
-      }
-    });
-    return options;
-  }
-
-  const pcOptions = collectOptions(selectedPastoralCare, PastoralCare, 'pcFunction');
-  const emailOptions = collectOptions(selectedEmailing, Emailing, 'emailFunction');
-  const newsOptions = collectOptions(selectedNews, New, 'newsFunction');
-
-  // Combine all options into one object
-  const allOptions = {
-    ...pcOptions,
-    ...emailOptions,
-    ...newsOptions
-  };
-
-  // --- Special handling for subtypeSeverity.js dynamic pairs ---
-  let subtypeSeverityCode = '';
-  if (selectedPastoralCare.includes('subtypeSeverity')) {
-    const entry = document.getElementById('pcFunction-subtypeSeverity')?.closest('.function-entry');
-    if (entry) {
-      const pairs = [];
-      const seen = new Set();
-      entry.querySelectorAll('div').forEach(row => {
-        const subtypeInput = row.querySelector('input[placeholder="Subtype"]');
-        const categoryInput = row.querySelector('input[placeholder="Category"]');
-        if (subtypeInput && categoryInput) {
-          const subtype = subtypeInput.value.trim();
-          const category = categoryInput.value.trim();
-          if (subtype && category) {
-            const key = `${subtype}|||${category}`;
-            if (!seen.has(key)) {
-              pairs.push([subtype, category]);
-              seen.add(key);
-            }
-          }
-        }
-      });
-      subtypeSeverityCode = `const subtypeSeverity = ${JSON.stringify(pairs, null, 4)};\n\n`;
-    }
-  }
-
-  // --- Special handling for subtypeAlert.js dynamic pairs ---
-  let subtypeAlertCode = '';
-  if (selectedPastoralCare.includes('subtypeAlert')) {
-    const entry = document.getElementById('pcFunction-subtypeAlertPairs')?.closest('.function-entry');
-    if (entry) {
-      const pairs = [];
-      const seen = new Set();
-      entry.querySelectorAll('div').forEach(row => {
-        const subtypeInput = row.querySelector('input[placeholder="Subtype"]');
-        const messageInput = row.querySelector('input[placeholder="Alert Message"]');
-        if (subtypeInput && messageInput) {
-          const subtype = subtypeInput.value.trim();
-          const message = messageInput.value.trim();
-          if (subtype && message) {
-            const key = `${subtype}|||${message}`;
-            if (!seen.has(key)) {
-              pairs.push([subtype, message]);
-              seen.add(key);
-            }
-          }
-        }
-      });
-      subtypeAlertCode = `const subtypeAlertPairs = ${JSON.stringify(pairs, null, 4)};\n\n`;
-    }
-  }
-
-  // --- Special handling for actionChecker.js dynamic rows ---
-  let actionCheckerCode = '';
-  if (selectedPastoralCare.includes('actionChecker')) {
-    const entry = document.getElementById('pcFunction-actionChecker')?.closest('.function-entry');
-    if (entry) {
-      const rows = [];
-      const seen = new Set();
-      entry.querySelectorAll('div').forEach(row => {
-        const actionInput = row.querySelector('input[placeholder="Action"]');
-        const tagListInput = row.querySelector('input[placeholder="Tag List (comma separated)"]');
-        const messageInput = row.querySelector('input[placeholder="Message"]');
-        if (actionInput && tagListInput && messageInput) {
-          const action = actionInput.value.trim();
-          const tagList = tagListInput.value.trim();
-          const message = messageInput.value.trim();
-          if (action && tagList && message) {
-            const key = `${action}|||${tagList}|||${message}`;
-            if (!seen.has(key)) {
-              rows.push([action, tagList, message]);
-              seen.add(key);
-            }
-          }
-        }
-      });
-      actionCheckerCode = `const actionCheckerRows = ${JSON.stringify(rows, null, 4)};\n\n`;
-    }
-  }
-
-  // Build variable declarations for all options
-  // Place special codes at the very top of functionsCode
-  let functionsCode = subtypeSeverityCode + subtypeAlertCode + actionCheckerCode;
-  Object.entries(allOptions).forEach(([fn, opts]) => {
-    Object.entries(opts).forEach(([key, value]) => {
-      // Variable name: functionname_key (e.g. forcedConfidential_type)
-      functionsCode += `const ${fn}_${key} = ${JSON.stringify(value)};\n`;
-    });
-  });
-
-  // List of all selected function script files
-  const selectedFiles = [
-    ...selectedPastoralCare.map(fn => `scripts/${fn}.js`),
-    ...selectedEmailing.map(fn => `scripts/${fn}.js`),
-    ...selectedNews.map(fn => `scripts/${fn}.js`)
-  ];
-
-  // Fetch and append the contents of each selected JS file
-  for (const file of selectedFiles) {
-    try {
-      const resp = await fetch(file);
-      if (!resp.ok) throw new Error(`Failed to load ${file}`);
-      const content = await resp.text();
-      functionsCode += `\n// ---- ${file} ----\n${content}\n`;
-    } catch (err) {
-      functionsCode += `\n// ERROR: Could not load ${file}: ${err.message}\n`;
-    }
-  }
-
-  // --- Append modal.js at the end ---
-  try {
-    const modalResp = await fetch('scripts/modal.js');
-    if (!modalResp.ok) throw new Error('Failed to load scripts/modal.js');
-    const modalContent = await modalResp.text();
-    functionsCode += `\n// ---- scripts/modal.js ----\n${modalContent}\n`;
-  } catch (err) {
-    functionsCode += `\n// ERROR: Could not load scripts/modal.js: ${err.message}\n`;
-  }
-
-  // Show the generated code in the output textareas
-  document.getElementById('output').value = loaderCode;
-  document.getElementById('functionsOutput').value = functionsCode;
-  // Do NOT update the combined output area automatically
 }
 
 // Add these functions for the new box:
@@ -630,6 +451,9 @@ function populateFunctionSections() {
   function createCheckbox(item, className) {
     const div = document.createElement('div');
     div.className = 'function-entry';
+    if (className === 'pcFunction') {
+      console.log('[UI] Creating PastoralCare function entry:', item.fileName, '-', item.name);
+    }
 
   // Header: Checkbox + Name + Description (aligned)
   const header = document.createElement('div');
@@ -1105,15 +929,16 @@ function populateFunctionSections() {
   // PastoralCare
   const pcSection = document.getElementById('PastoralCareSection');
   pcSection.innerHTML = '<legend>PastoralCare Functions</legend>';
-  const sortedPastoralCare = [...PastoralCare].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sortedPastoralCare = [...(Array.isArray(window.PastoralCare) ? window.PastoralCare : [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   sortedPastoralCare.forEach(item => {
     pcSection.appendChild(createCheckbox(item, 'pcFunction'));
   });
+  
 
   // Emailing
   const emailingSection = document.getElementById('EmailingSection');
   emailingSection.innerHTML = '<legend>Emailing Functions</legend>';
-  const sortedEmailing = [...Emailing].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sortedEmailing = [...(Array.isArray(window.Emailing) ? window.Emailing : [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   sortedEmailing.forEach(item => {
     emailingSection.appendChild(createCheckbox(item, 'emailFunction'));
   });
@@ -1121,7 +946,7 @@ function populateFunctionSections() {
   // News
   const newsSection = document.getElementById('NewsSection');
   newsSection.innerHTML = '<legend>News Functions</legend>';
-  const sortedNew = [...New].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const sortedNew = [...(Array.isArray(window.New) ? window.New : [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   sortedNew.forEach(item => {
     newsSection.appendChild(createCheckbox(item, 'newsFunction'));
   });
@@ -1325,10 +1150,10 @@ function restoreFunctionsConfig() {
     }
 
     // After restoring variables, also check function checkboxes for included scripts
-    ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
+      ['pcFunction', 'emailFunction', 'newsFunction'].forEach(className => {
       document.querySelectorAll(`.${className}`).forEach(cb => {
         const fn = cb.value;
-        const regex = new RegExp(`// ---- scripts/${fn}\\.js ----`);
+          const regex = new RegExp(`//\\s*-+\\s*(?:.*\\/)?${fn}\\.js\\s*-+`);
         if (regex.test(code)) {
           cb.checked = true;
           cb.dispatchEvent(new Event('change'));
@@ -1417,7 +1242,7 @@ function restoreAllConfig() {
     document.querySelectorAll(`.${className}`).forEach(cb => {
       const fn = cb.value;
       // Look for the script block in the code
-      const regex = new RegExp(`// ---- scripts/${fn}\\.js ----`);
+      const regex = new RegExp(`// ---- (?:.*\\/)?${fn}\\.js ----`);
       // Use the correct code source (functionsCode for restoreAllConfig, code for restoreConfig)
       const codeSource = typeof functionsCode !== 'undefined' ? functionsCode : code;
       if (regex.test(codeSource)) {
