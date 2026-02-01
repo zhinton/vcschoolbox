@@ -480,7 +480,21 @@
     }
     // legacy hardcoded template buttons removed; sidebar is built dynamically
     
-    // --- Dynamically load example forms from the Forms/ folder ---
+    // --- Static form examples configuration ---
+    const FORM_EXAMPLES = {
+      "General": [
+        { file: "BehaviourIncidentForm.js", name: "Behaviour Incident Report" },
+        { file: "RefferalForm.js", name: "Referral Form" },
+        { file: "RequestForm.js", name: "Request Form" }
+      ],
+      "NCCD": [
+        { file: "adjustmentLogForm.js", name: "Adjustment Log Form" },
+        { file: "consultationForm.js", name: "Consultation Form" },
+        { file: "decisionRecordForm.js", name: "Decision Record Form" },
+        { file: "ilpAdjustmentForm.js", name: "ILP Adjustment Form" }
+      ]
+    };
+
     async function extractObjectFromJS(text, varName) {
       const idx = text.indexOf(varName);
       if (idx === -1) return null;
@@ -515,98 +529,61 @@
     async function buildExamplesSidebar() {
       const container = document.getElementById('examplesContainer');
       container.innerHTML = '';
+      
       try {
-        const resp = await fetch('Forms/');
-        if (!resp.ok) throw new Error('Failed to load Forms/');
-        const text = await resp.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, 'text/html');
-        const links = Array.from(doc.querySelectorAll('a'))
-          .map(a => a.getAttribute('href'))
-          .filter(h => h && h.endsWith('/'))
-          .filter(h => h !== '../');
-
-        if (links.length === 0) {
-          container.innerHTML = '<div style="color:#666">No example folders found in Forms/</div>';
-          return;
-        }
-
-        for (const sub of links) {
-          const folderName = sub.replace(/\/+$/, '');
+        for (const [folderName, files] of Object.entries(FORM_EXAMPLES)) {
           const section = document.createElement('div');
           const h = document.createElement('h3');
           h.textContent = folderName + ' Example Forms';
           section.appendChild(h);
 
-          // fetch folder listing
-          try {
-            const resp2 = await fetch('Forms/' + sub);
-            if (!resp2.ok) throw new Error('Failed to load folder');
-            const t2 = await resp2.text();
-            const d2 = parser.parseFromString(t2, 'text/html');
-            const files = Array.from(d2.querySelectorAll('a'))
-              .map(a => a.getAttribute('href'))
-              .filter(h => h && h.endsWith('.js'));
-
-            if (files.length === 0) {
-              const note = document.createElement('div');
-              note.style.color = '#666';
-              note.style.marginBottom = '8px';
-              note.textContent = 'No form files found.';
-              section.appendChild(note);
-            }
-
-            for (const file of files) {
-              const filePath = 'Forms/' + sub + file;
-              try {
-                const fileResp = await fetch(filePath);
-                if (!fileResp.ok) throw new Error('Failed');
-                const fileText = await fileResp.text();
-                const parsed = await extractObjectFromJS(fileText, 'formSchema');
-                const label = (parsed && parsed.formName) ? parsed.formName : file.replace('.js','');
-                const btn = document.createElement('button');
-                btn.className = 'template-btn';
-                btn.textContent = label;
-                btn.onclick = () => {
-                  // import file content into restore/output textarea and trigger Restore
-                  const out = document.getElementById('output');
-                  if (out) out.value = fileText;
-                  // If we successfully extracted a schema object, prefer loading it directly
-                  if (parsed) {
-                    try {
-                      loadTemplate(parsed);
-                      // ensure generated code is produced (loadTemplate calls generateForm if available)
-                      const gen = document.getElementById('generateFormBtn');
-                      if (gen) gen.click();
-                    } catch (e) {
-                      console.error('loadTemplate failed', e);
-                    }
-                    return;
+          for (const fileInfo of files) {
+            const filePath = `Forms/${folderName}/${fileInfo.file}`;
+            try {
+              const fileResp = await fetch(filePath);
+              if (!fileResp.ok) throw new Error('Failed to load ' + filePath);
+              const fileText = await fileResp.text();
+              const parsed = await extractObjectFromJS(fileText, 'formSchema');
+              const label = (parsed && parsed.formName) ? parsed.formName : fileInfo.name;
+              const btn = document.createElement('button');
+              btn.className = 'template-btn';
+              btn.textContent = label;
+              btn.onclick = () => {
+                // import file content into restore/output textarea and trigger Restore
+                const out = document.getElementById('output');
+                if (out) out.value = fileText;
+                // If we successfully extracted a schema object, prefer loading it directly
+                if (parsed) {
+                  try {
+                    loadTemplate(parsed);
+                    // ensure generated code is produced (loadTemplate calls generateForm if available)
+                    const gen = document.getElementById('generateFormBtn');
+                    if (gen) gen.click();
+                  } catch (e) {
+                    console.error('loadTemplate failed', e);
                   }
-                  const rst = document.getElementById('restoreBtn');
-                  if (rst) {
-                    // give the DOM a moment to update and run the restore
-                    setTimeout(() => rst.click(), 10);
-                    // after restore, trigger the Generate Form button so output is refreshed
-                    setTimeout(() => {
-                      const gen = document.getElementById('generateFormBtn');
-                      if (gen) gen.click();
-                      else if (typeof generateForm === 'function') generateForm();
-                    }, 140);
-                  }
-                };
-                section.appendChild(btn);
-              } catch (e) {
-                console.error('file load failed', filePath, e);
-              }
+                  return;
+                }
+                const rst = document.getElementById('restoreBtn');
+                if (rst) {
+                  // give the DOM a moment to update and run the restore
+                  setTimeout(() => rst.click(), 10);
+                  // after restore, trigger the Generate Form button so output is refreshed
+                  setTimeout(() => {
+                    const gen = document.getElementById('generateFormBtn');
+                    if (gen) gen.click();
+                    else if (typeof generateForm === 'function') generateForm();
+                  }, 140);
+                }
+              };
+              section.appendChild(btn);
+            } catch (e) {
+              console.error('file load failed', filePath, e);
             }
-          } catch (e) {
-            console.error('folder read failed', sub, e);
           }
 
           container.appendChild(section);
         }
-
       } catch (e) {
         container.innerHTML = '<div style="color:#b00020">Could not load example forms: ' + e.message + '</div>';
       }

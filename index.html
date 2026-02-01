@@ -356,6 +356,25 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
 </script>
 <!-- Pastoral Care dynamic loader: builds function list from scripts/pastoralCare/ -->
 <script>
+  // Static function definitions for all modules
+  const FUNCTION_DEFINITIONS = {
+    pastoralCare: [
+      { file: "actionChecker.js", name: "Action Checker" },
+      { file: "forcedConfidential.js", name: "Forced Confidential" },
+      { file: "formEmbedding.js", name: "Form Embedding" },
+      { file: "hoverEffect.js", name: "Hover Effect" },
+      { file: "submitNotification.js", name: "Submit Notification" },
+      { file: "subtypeAlert.js", name: "Subtype Alert" },
+      { file: "subtypeSeverity.js", name: "Subtype Severity" }
+    ],
+    emailing: [
+      { file: "externalEmail.js", name: "External Email" }
+    ],
+    news: [
+      { file: "parentNews.js", name: "Parent News" }
+    ]
+  };
+
   // extract an object literal named `objName` from JS text and parse it
   function extractObjectFromJS(text, objName) {
     const idx = text.indexOf(objName);
@@ -397,22 +416,16 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
     const section = document.getElementById('PastoralCareSection');
     if (!section) return;
     section.innerHTML = '';
+    
+    const files = FUNCTION_DEFINITIONS.pastoralCare;
+    if (files.length === 0) {
+      section.innerHTML = '<div style="color:#666;padding:8px;">No Pastoral Care scripts found.</div>';
+      return;
+    }
+
     try {
-      const resp = await fetch('Functions/pastoralCare/');
-      if (!resp.ok) throw new Error('Failed to load Functions/pastoralCare/');
-      const text = await resp.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/html');
-      const files = Array.from(doc.querySelectorAll('a'))
-        .map(a => a.getAttribute('href'))
-        .filter(h => h && h.endsWith('.js'));
-
-      if (files.length === 0) {
-        section.innerHTML = '<div style="color:#666;padding:8px;">No Pastoral Care scripts found.</div>';
-        return;
-      }
-
-      for (const file of files) {
+      for (const fileInfo of files) {
+        const file = fileInfo.file;
         const filePath = 'Functions/pastoralCare/' + file;
         try {
           const fileResp = await fetch(filePath);
@@ -421,7 +434,7 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
           let parsed = extractObjectFromJS(fileText, 'functionSchema');
           if (!parsed) parsed = extractObjectFromJS(fileText, 'embedSchema');
           if (!parsed) parsed = extractObjectFromJS(fileText, 'formSchema');
-          const title = (parsed && parsed.functionName) ? parsed.functionName : file.replace('.js','');
+          const title = (parsed && parsed.functionName) ? parsed.functionName : fileInfo.name;
 
           const entry = document.createElement('div');
           entry.className = 'function-entry dyn-entry';
@@ -694,22 +707,16 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
     const section = document.getElementById('NewsSection');
     if (!section) return;
     section.innerHTML = '';
+    
+    const files = FUNCTION_DEFINITIONS.news;
+    if (files.length === 0) {
+      section.innerHTML = '<div style="color:#666;padding:8px;">No News scripts found.</div>';
+      return;
+    }
+
     try {
-      const resp = await fetch('Functions/news/');
-      if (!resp.ok) throw new Error('Failed to load Functions/news/');
-      const text = await resp.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/html');
-      const files = Array.from(doc.querySelectorAll('a'))
-        .map(a => a.getAttribute('href'))
-        .filter(h => h && h.endsWith('.js'));
-
-      if (files.length === 0) {
-        section.innerHTML = '<div style="color:#666;padding:8px;">No News scripts found.</div>';
-        return;
-      }
-
-      for (const file of files) {
+      for (const fileInfo of files) {
+        const file = fileInfo.file;
         const filePath = 'Functions/news/' + file;
         try {
           const fileResp = await fetch(filePath);
@@ -718,7 +725,7 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
           let parsed = extractObjectFromJS(fileText, 'functionSchema');
           if (!parsed) parsed = extractObjectFromJS(fileText, 'embedSchema');
           if (!parsed) parsed = extractObjectFromJS(fileText, 'formSchema');
-          const title = (parsed && parsed.functionName) ? parsed.functionName : file.replace('.js','');
+          const title = (parsed && parsed.functionName) ? parsed.functionName : fileInfo.name;
 
           const entry = document.createElement('div');
           entry.className = 'function-entry dyn-entry';
@@ -896,22 +903,16 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
     const section = document.getElementById('EmailingSection');
     if (!section) return;
     section.innerHTML = '';
+    
+    const files = FUNCTION_DEFINITIONS.emailing;
+    if (files.length === 0) {
+      section.innerHTML = '<div style="color:#666;padding:8px;">No Emailing scripts found.</div>';
+      return;
+    }
+
     try {
-      const resp = await fetch('Functions/emailing/');
-      if (!resp.ok) throw new Error('Failed to load Functions/emailing/');
-      const text = await resp.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/html');
-      const files = Array.from(doc.querySelectorAll('a'))
-        .map(a => a.getAttribute('href'))
-        .filter(h => h && h.endsWith('.js'));
-
-      if (files.length === 0) {
-        section.innerHTML = '<div style="color:#666;padding:8px;">No Emailing scripts found.</div>';
-        return;
-      }
-
-      for (const file of files) {
+      for (const fileInfo of files) {
+        const file = fileInfo.file;
         const filePath = 'Functions/emailing/' + file;
         try {
           const fileResp = await fetch(filePath);
@@ -920,7 +921,7 @@ document.addEventListener('DOMContentLoaded', updateColorPreview);
           let parsed = extractObjectFromJS(fileText, 'functionSchema');
           if (!parsed) parsed = extractObjectFromJS(fileText, 'embedSchema');
           if (!parsed) parsed = extractObjectFromJS(fileText, 'formSchema');
-          const title = (parsed && parsed.functionName) ? parsed.functionName : file.replace('.js','');
+          const title = (parsed && parsed.functionName) ? parsed.functionName : fileInfo.name;
 
           const entry = document.createElement('div');
           entry.className = 'function-entry dyn-entry';
